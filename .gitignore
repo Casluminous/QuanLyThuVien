@@ -1,0 +1,25 @@
+## .NET
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.nupkg
+*.snupkg
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+## IDE
+.vs/
+.idea/
+*.swp
+*~
+
+## Backup directories
+backup-*/
+
+## OS
+Thumbs.db
+.DS_Store
