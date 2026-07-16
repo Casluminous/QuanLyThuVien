@@ -175,7 +175,7 @@ namespace QuanLyThuVien.Forms
             if (cboDG.Items.Count > 0) cboDG.SelectedIndex = 0;
 
             var lbl2 = new Label { Text = "Ngày mượn:", Location = new Point(20, 65), AutoSize = true };
-            var dtpMuon = new DateTimePicker { Location = new Point(140, 62), Size = new Size(200, 30), Format = DateTimePickerFormat.Short, Value = DateTime.Now };
+            var dtpMuon = new DateTimePicker { Location = new Point(140, 62), Size = new Size(200, 30), Format = DateTimePickerFormat.Short, MaxDate = DateTime.Today, Value = DateTime.Today };
 
             var lbl3 = new Label { Text = "Số ngày mượn:", Location = new Point(20, 105), AutoSize = true };
             var nudDays = new NumericUpDown { Location = new Point(140, 102), Size = new Size(100, 30), Minimum = 1, Maximum = 90, Value = 14 };
@@ -228,6 +228,8 @@ namespace QuanLyThuVien.Forms
             {
                 if (cboDG.SelectedItem is not ComboItem dg)
                 { MessageBox.Show("Chọn độc giả!"); return; }
+                if (dtpMuon.Value.Date > DateTime.Today)
+                { MessageBox.Show("Ngày mượn không được ở tương lai!"); return; }
 
                 var sachMuon = new List<(int maSach, int sl)>();
                 foreach (DataGridViewRow row in dgvSach.Rows)

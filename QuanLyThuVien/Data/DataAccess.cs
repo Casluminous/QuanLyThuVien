@@ -305,6 +305,18 @@ namespace QuanLyThuVien.Data
         public static bool InsertPhieuMuonFull(PhieuMuon pm, List<(int maSach, int soLuong)> chiTiet, out string? failureReason)
         {
             failureReason = null;
+            if (pm.NgayMuon.Date > DateTime.Today)
+            {
+                failureReason = "Ngày mượn không được ở tương lai.";
+                return false;
+            }
+
+            if (pm.HanTra.Date < pm.NgayMuon.Date)
+            {
+                failureReason = "Hạn trả không được trước ngày mượn.";
+                return false;
+            }
+
             using (var conn = GetConnection())
             {
                 conn.Open();
