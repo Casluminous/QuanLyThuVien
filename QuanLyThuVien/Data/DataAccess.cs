@@ -220,6 +220,11 @@ namespace QuanLyThuVien.Data
                 new SqlParameter("@mota", s.MoTa), new SqlParameter("@ha", s.HinhAnh),
                 new SqlParameter("@ma", s.MaSach));
 
+        public static int UpdateSachImage(int maSach, string hinhAnh) =>
+            ExecuteNonQuery("UPDATE Sach SET HinhAnh=@ha WHERE MaSach=@ma",
+                new SqlParameter("@ha", hinhAnh),
+                new SqlParameter("@ma", maSach));
+
         public static int DeleteSach(int maSach) =>
             ExecuteNonQuery("DELETE FROM Sach WHERE MaSach=@ma", new SqlParameter("@ma", maSach));
 
