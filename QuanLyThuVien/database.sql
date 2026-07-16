@@ -1,4 +1,4 @@
-IF DB_ID('QuanLyThuVien') IS NULL
+﻿IF DB_ID('QuanLyThuVien') IS NULL
     CREATE DATABASE QuanLyThuVien
 GO
 USE QuanLyThuVien
@@ -96,24 +96,29 @@ CREATE INDEX IX_PhieuMuon_TrangThai ON PhieuMuon(TrangThai)
 IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_ChiTietPM_MaPhieuMuon' AND object_id = OBJECT_ID('ChiTietPhieuMuon'))
 CREATE INDEX IX_ChiTietPM_MaPhieuMuon ON ChiTietPhieuMuon(MaPhieuMuon)
 
+IF NOT EXISTS (SELECT 1 FROM NhanVien WHERE TenDangNhap = 'admin')
 INSERT INTO NhanVien(HoTen, TenDangNhap, MatKhau, VaiTro) VALUES
 (N'Admin', 'admin', '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918', 'Admin'),
 (N'Nhân viên 1', 'nhanvien1', '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918', 'NhanVien')
 
+IF NOT EXISTS (SELECT 1 FROM TheLoai)
 INSERT INTO TheLoai(TenTheLoai) VALUES
 (N'Văn học'), (N'Khoa học'), (N'Lịch sử'), (N'Tin học'), (N'Truyện tranh')
 
+IF NOT EXISTS (SELECT 1 FROM TacGia)
 INSERT INTO TacGia(TenTG, QuocTich) VALUES
 (N'Nguyễn Nhật Ánh', N'Việt Nam'),
 (N'J.K. Rowling', N'Anh'),
 (N'Haruki Murakami', N'Nhật Bản'),
 (N'Dan Brown', N'Mỹ')
 
+IF NOT EXISTS (SELECT 1 FROM NhaXuatBan)
 INSERT INTO NhaXuatBan(TenNXB, DiaChi, SoDienThoai) VALUES
 (N'NXB Trẻ', N'TP.HCM', '0281234567'),
 (N'NXB Kim Đồng', N'Hà Nội', '0241234567'),
 (N'NXB Văn Học', N'Hà Nội', '0249876543')
 
+IF NOT EXISTS (SELECT 1 FROM Sach)
 INSERT INTO Sach(TenSach, MaISBN, MaTL, MaTG, MaNXB, NamXB, SoLuong, GiaTien, MoTa) VALUES
 (N'Mắt biếc', '9786041234567', 1, 1, 1, 2020, 10, 85000, N'Truyện dài của Nguyễn Nhật Ánh'),
 (N'Harry Potter và Hòn đá phù thủy', '9786041234568', 5, 2, 2, 2000, 15, 120000, N'Tập 1 series Harry Potter'),
@@ -121,6 +126,7 @@ INSERT INTO Sach(TenSach, MaISBN, MaTL, MaTG, MaNXB, NamXB, SoLuong, GiaTien, Mo
 (N'Mật mã Da Vinci', '9786041234570', 1, 4, 1, 2003, 12, 110000, N'Thriller của Dan Brown'),
 (N'Đắc Nhân Tâm', '9786041234571', 2, 4, 1, 2019, 20, 68000, N'Sách phát triển bản thân')
 
+IF NOT EXISTS (SELECT 1 FROM DocGia)
 INSERT INTO DocGia(HoTen, NgaySinh, GioiTinh, SoDienThoai, Email) VALUES
 (N'Nguyễn Văn An', '2000-05-15', N'Nam', '0901234567', 'an@gmail.com'),
 (N'Trần Thị Bình', '1998-08-20', N'Nữ', '0912345678', 'binh@gmail.com'),

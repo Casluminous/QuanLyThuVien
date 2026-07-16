@@ -164,13 +164,13 @@ namespace QuanLyThuVien.Data
         public static DataTable GetAllTacGia() =>
             ExecuteQuery("SELECT * FROM TacGia");
 
-        public static int InsertTacGia(string tenTG, string quocTich, string ghiChu) =>
-            ExecuteNonQuery("INSERT INTO TacGia(TenTG,QuocTich,GhiChu) VALUES(@ten,@qt,@gc)",
-                new SqlParameter("@ten", tenTG), new SqlParameter("@qt", quocTich), new SqlParameter("@gc", ghiChu));
+        public static int InsertTacGia(string tenTG, string quocTia, string ghiChu) =>
+            ExecuteNonQuery("INSERT INTO TacGia(TenTG,QuocTia,GhiChu) VALUES(@ten,@qt,@gc)",
+                new SqlParameter("@ten", tenTG), new SqlParameter("@qt", quocTia), new SqlParameter("@gc", ghiChu));
 
-        public static int UpdateTacGia(int maTG, string tenTG, string quocTich, string ghiChu) =>
-            ExecuteNonQuery("UPDATE TacGia SET TenTG=@ten,QuocTich=@qt,GhiChu=@gc WHERE MaTG=@ma",
-                new SqlParameter("@ten", tenTG), new SqlParameter("@qt", quocTich), new SqlParameter("@gc", ghiChu), new SqlParameter("@ma", maTG));
+        public static int UpdateTacGia(int maTG, string tenTG, string quocTia, string ghiChu) =>
+            ExecuteNonQuery("UPDATE TacGia SET TenTG=@ten,QuocTia=@qt,GhiChu=@gc WHERE MaTG=@ma",
+                new SqlParameter("@ten", tenTG), new SqlParameter("@qt", quocTia), new SqlParameter("@gc", ghiChu), new SqlParameter("@ma", maTG));
 
         public static int DeleteTacGia(int maTG) =>
             ExecuteNonQuery("DELETE FROM TacGia WHERE MaTG=@ma",

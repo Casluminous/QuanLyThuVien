@@ -193,6 +193,7 @@ namespace QuanLyThuVien.Forms
                 RowHeadersVisible = true,
                 AllowUserToAddRows = false,
                 AllowUserToDeleteRows = false,
+                ReadOnly = false,
                 AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
                 ColumnHeadersDefaultCellStyle = new DataGridViewCellStyle
                 {
@@ -210,7 +211,18 @@ namespace QuanLyThuVien.Forms
             dgvSach.Columns.Add("SoLuongKhaDung", "SL khả dụng");
             dgvSach.Columns.Add("SoLuongMuon", "SL mượn");
             foreach (DataRow row in sachData.Rows)
-                dgvSach.Rows.Add(false, row["MaSach"], row["TenSach"], row["SoLuong"], 0);
+                dgvSach.Rows.Add(false, row["MaSach"], row["TenSach"], row["SoLuong"], 1);
+
+            dgvSach.CellClick += (s, e) =>
+            {
+                if (e.ColumnIndex == 0 && e.RowIndex >= 0)
+                {
+                    var cell = dgvSach.Rows[e.RowIndex].Cells["Chon"];
+                    bool current = Convert.ToBoolean(cell.Value);
+                    cell.Value = !current;
+                    dgvSach.Rows[e.RowIndex].Cells["SoLuongMuon"].Value = !current ? 1 : 0;
+                }
+            };
 
             var btnOk = new ModernButton { Text = "Tạo phiếu", Location = new Point(200, 370), Size = new Size(130, 40), BaseColor = AppColors.Primary, BorderRadius = 8 };
             var btnCancel = new ModernButton { Text = "Hủy", Location = new Point(350, 370), Size = new Size(100, 40), BaseColor = AppColors.TextSecondary, BorderRadius = 8 };

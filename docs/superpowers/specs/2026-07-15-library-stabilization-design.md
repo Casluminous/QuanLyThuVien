@@ -1,4 +1,4 @@
-# Stabilize QuanLyThuVien
+﻿# Stabilize QuanLyThuVien
 
 **Date:** 2026-07-15  
 **Status:** Design approved; implementation requires review of this spec.  

@@ -9,25 +9,35 @@ namespace QuanLyThuVien.Controls
         private string _price = "";
         private string _genre = "";
         private Image? _coverImage;
-        private Color _gradientStart = Color.FromArgb(232, 132, 107);  // Coral
-        private Color _gradientEnd = Color.FromArgb(210, 110, 85);    // Dark coral
         private bool _isHovered = false;
+
+        private static readonly Font _titleFont = new Font("Segoe UI", 11F, FontStyle.Bold);
+        private static readonly Font _authorFont = new Font("Segoe UI", 9.5F, FontStyle.Regular);
+        private static readonly Font _priceFont = new Font("Segoe UI", 12F, FontStyle.Bold);
+        private static readonly Font _genreFont = new Font("Segoe UI", 8F, FontStyle.Bold);
+        private static readonly Font _placeholderFont = new Font("Segoe UI", 24F, FontStyle.Bold);
+
+        private static readonly Color _bgColor = Color.FromArgb(252, 250, 247);
+        private static readonly Color _textPrimary = Color.FromArgb(45, 42, 38);
+        private static readonly Color _textSecondary = Color.FromArgb(120, 115, 108);
+        private static readonly Color _accentCoral = Color.FromArgb(232, 132, 107);
+        private static readonly Color _accentMint = Color.FromArgb(143, 188, 143);
+        private static readonly Color _accentLavender = Color.FromArgb(180, 160, 210);
+        private static readonly Color _accentPeach = Color.FromArgb(245, 180, 150);
+        private static readonly Color _accentSky = Color.FromArgb(140, 190, 220);
+
+        private static readonly Color[] _genreColors = new[]
+        {
+            _accentCoral, _accentMint, _accentLavender, _accentPeach, _accentSky
+        };
 
         public string Title { get => _title; set { _title = value; Invalidate(); } }
         public string Author { get => _author; set { _author = value; Invalidate(); } }
         public string Price { get => _price; set { _price = value; Invalidate(); } }
         public string Genre { get => _genre; set { _genre = value; Invalidate(); } }
         public Image? CoverImage { get => _coverImage; set { _coverImage = value; Invalidate(); } }
-        public Color GradientStart { get => _gradientStart; set { _gradientStart = value; Invalidate(); } }
-        public Color GradientEnd { get => _gradientEnd; set { _gradientEnd = value; Invalidate(); } }
 
-        public int BorderRadius { get; set; } = 16;
-
-        private static readonly Font _titleFont = new Font("Segoe UI", 12F, FontStyle.Bold);
-        private static readonly Font _authorFont = new Font("Segoe UI", 10F, FontStyle.Regular);
-        private static readonly Font _priceFont = new Font("Segoe UI", 13F, FontStyle.Bold);
-        private static readonly Font _genreFont = new Font("Segoe UI", 9F, FontStyle.Regular);
-        private static readonly Font _placeholderFont = new Font("Segoe UI", 28F, FontStyle.Bold);
+        public int BorderRadius { get; set; } = 14;
 
         public BookCardControl()
         {
@@ -37,8 +47,9 @@ namespace QuanLyThuVien.Controls
                 ControlStyles.OptimizedDoubleBuffer |
                 ControlStyles.ResizeRedraw,
                 true);
-            Size = new Size(250, 360);
+            Size = new Size(240, 340);
             Cursor = Cursors.Hand;
+            Margin = new Padding(6);
 
             MouseEnter += (s, e) => { _isHovered = true; Invalidate(); };
             MouseLeave += (s, e) => { _isHovered = false; Invalidate(); };
@@ -51,99 +62,98 @@ namespace QuanLyThuVien.Controls
             g.SmoothingMode = SmoothingMode.AntiAlias;
             g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
 
-            int shadowOffset = _isHovered ? 8 : 4;
+            int shadowOffset = _isHovered ? 6 : 3;
             var cardRect = new Rectangle(0, shadowOffset, Width, Height - shadowOffset);
 
-            // Draw shadow
+            // Shadow
             for (int i = shadowOffset; i >= 1; i--)
             {
-                var shadowRect = new Rectangle(i, shadowOffset + i, Width - i * 2, Height - shadowOffset - i * 2);
-                using (var path = CreateRoundedPath(shadowRect, BorderRadius))
-                using (var brush = new SolidBrush(Color.FromArgb(_isHovered ? 30 : 15, 0, 0, 0)))
-                    g.FillPath(brush, path);
+                int shrink = i * 2;
+                var sr = new Rectangle(i, shadowOffset + i, Width - shrink, Height - shadowOffset - shrink);
+                using var path = CreateRoundedPath(sr, BorderRadius);
+                using var brush = new SolidBrush(Color.FromArgb(_isHovered ? 25 : 10, 0, 0, 0));
+                g.FillPath(brush, path);
             }
 
-            // Draw gradient background
+            // White card background
             using (var path = CreateRoundedPath(cardRect, BorderRadius))
             {
                 Region = new Region(path);
-                using (var brush = new LinearGradientBrush(cardRect, _gradientStart, _gradientEnd, LinearGradientMode.Vertical))
-                    g.FillPath(brush, path);
+                using var brush = new SolidBrush(_bgColor);
+                g.FillPath(brush, path);
             }
 
-            int padding = 14;
-            int imageHeight = 160;
-            var imageRect = new Rectangle(cardRect.X + padding, cardRect.Y + padding, cardRect.Width - padding * 2, imageHeight);
+            int pad = 12;
+            int imageH = 165;
+            var imageRect = new Rectangle(cardRect.X + pad, cardRect.Y + pad, cardRect.Width - pad * 2, imageH);
 
-            // Draw image or placeholder
+            // Image or placeholder
             if (_coverImage != null)
             {
-                using (var imgPath = CreateRoundedPath(imageRect, 10))
-                {
-                    g.SetClip(imgPath);
-                    // Center-crop the image
-                    var imgAspect = (float)_coverImage.Width / _coverImage.Height;
-                    var rectAspect = (float)imageRect.Width / imageRect.Height;
+                using var imgPath = CreateRoundedPath(imageRect, 10);
+                g.SetClip(imgPath);
 
-                    int srcX, srcY, srcW, srcH;
-                    if (imgAspect > rectAspect)
-                    {
-                        srcH = _coverImage.Height;
-                        srcW = (int)(srcH * rectAspect);
-                        srcX = (_coverImage.Width - srcW) / 2;
-                        srcY = 0;
-                    }
-                    else
-                    {
-                        srcW = _coverImage.Width;
-                        srcH = (int)(srcW / rectAspect);
-                        srcX = 0;
-                        srcY = (_coverImage.Height - srcH) / 2;
-                    }
-                    g.DrawImage(_coverImage, imageRect, srcX, srcY, srcW, srcH, GraphicsUnit.Pixel);
-                    g.ResetClip();
+                var imgAspect = (float)_coverImage.Width / _coverImage.Height;
+                var rectAspect = (float)imageRect.Width / imageRect.Height;
+                int srcX, srcY, srcW, srcH;
+                if (imgAspect > rectAspect)
+                {
+                    srcH = _coverImage.Height;
+                    srcW = (int)(srcH * rectAspect);
+                    srcX = (_coverImage.Width - srcW) / 2;
+                    srcY = 0;
                 }
+                else
+                {
+                    srcW = _coverImage.Width;
+                    srcH = (int)(srcW / rectAspect);
+                    srcX = 0;
+                    srcY = (_coverImage.Height - srcH) / 2;
+                }
+                g.DrawImage(_coverImage, imageRect, srcX, srcY, srcW, srcH, GraphicsUnit.Pixel);
+                g.ResetClip();
             }
             else
             {
-                // Draw placeholder
-                using (var brush = new SolidBrush(Color.FromArgb(40, 255, 255, 255)))
-                    g.FillRectangle(brush, imageRect);
-
-                using (var pen = new Pen(Color.FromArgb(60, 255, 255, 255), 2))
-                {
-                    pen.DashStyle = DashStyle.Dash;
-                    g.DrawRectangle(pen, imageRect);
-                }
+                // Light placeholder
+                using var bgBrush = new SolidBrush(Color.FromArgb(240, 238, 234));
+                g.FillRectangle(bgBrush, imageRect);
 
                 // Book icon
-                var iconRect = new Rectangle(imageRect.X + imageRect.Width / 2 - 25, imageRect.Y + imageRect.Height / 2 - 30, 50, 50);
-                using (var brush = new SolidBrush(Color.FromArgb(80, 255, 255, 255)))
-                    g.FillRectangle(brush, iconRect);
-                using (var pen = new Pen(Color.FromArgb(120, 255, 255, 255), 2))
-                    g.DrawRectangle(pen, iconRect);
+                int iconSize = 44;
+                var iconRect = new Rectangle(
+                    imageRect.X + (imageRect.Width - iconSize) / 2,
+                    imageRect.Y + (imageRect.Height - iconSize) / 2,
+                    iconSize, iconSize);
+                using var iconPen = new Pen(Color.FromArgb(200, 200, 195), 2);
+                g.DrawRectangle(iconPen, iconRect);
 
-                using (var brush = new SolidBrush(Color.FromArgb(100, 255, 255, 255)))
-                    g.DrawString("+", _placeholderFont, brush, imageRect, new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center });
+                // + symbol
+                using var plusBrush = new SolidBrush(Color.FromArgb(180, 180, 175));
+                g.DrawString("+", _placeholderFont, plusBrush, imageRect,
+                    new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center });
             }
 
-            // Draw genre tag
-            int textY = cardRect.Y + padding + imageHeight + 10;
+            // Thin colored line under image
+            int lineY = cardRect.Y + pad + imageH + 6;
+            var genreColor = GetGenreColor(_genre);
+            using var linePen = new Pen(genreColor, 2.5f);
+            g.DrawLine(linePen, cardRect.X + pad, lineY, cardRect.X + pad + 40, lineY);
+
+            // Genre tag
+            int textY = lineY + 8;
             if (!string.IsNullOrEmpty(_genre))
             {
-                var genreSize = g.MeasureString(_genre.ToUpperInvariant(), _genreFont);
-                var genreRect = new RectangleF(cardRect.X + padding, textY, genreSize.Width + 12, genreSize.Height + 4);
-                using (var brush = new SolidBrush(Color.FromArgb(50, 255, 255, 255)))
-                    g.FillRectangle(brush, genreRect);
-                using (var brush = new SolidBrush(Color.FromArgb(200, 255, 255, 255)))
-                    g.DrawString(_genre.ToUpperInvariant(), _genreFont, brush, new PointF(cardRect.X + padding + 6, textY + 2));
-                textY += (int)genreSize.Height + 10;
+                using var genreBrush = new SolidBrush(genreColor);
+                g.DrawString(_genre.ToUpperInvariant(), _genreFont, genreBrush,
+                    new PointF(cardRect.X + pad, textY));
+                textY += 18;
             }
 
-            // Draw title
-            using (var brush = new SolidBrush(Color.White))
+            // Title
+            using (var brush = new SolidBrush(_textPrimary))
             {
-                var titleRect = new RectangleF(cardRect.X + padding, textY, cardRect.Width - padding * 2, 30);
+                var titleRect = new RectangleF(cardRect.X + pad, textY, cardRect.Width - pad * 2, 28);
                 var titleFormat = new StringFormat
                 {
                     Alignment = StringAlignment.Near,
@@ -153,12 +163,12 @@ namespace QuanLyThuVien.Controls
                 };
                 g.DrawString(_title, _titleFont, brush, titleRect, titleFormat);
             }
-            textY += 30;
+            textY += 28;
 
-            // Draw author
-            using (var brush = new SolidBrush(Color.FromArgb(180, 255, 255, 255)))
+            // Author
+            using (var brush = new SolidBrush(_textSecondary))
             {
-                var authorRect = new RectangleF(cardRect.X + padding, textY, cardRect.Width - padding * 2, 20);
+                var authorRect = new RectangleF(cardRect.X + pad, textY, cardRect.Width - pad * 2, 18);
                 var authorFormat = new StringFormat
                 {
                     Alignment = StringAlignment.Near,
@@ -168,13 +178,21 @@ namespace QuanLyThuVien.Controls
                 };
                 g.DrawString(_author, _authorFont, brush, authorRect, authorFormat);
             }
-            textY += 24;
 
-            // Draw price
-            using (var brush = new SolidBrush(Color.White))
+            // Price at bottom
+            using (var brush = new SolidBrush(_accentCoral))
             {
-                g.DrawString(_price, _priceFont, brush, new PointF(cardRect.X + padding, textY));
+                var priceFormat = new StringFormat { Alignment = StringAlignment.Near, LineAlignment = StringAlignment.Far };
+                var priceRect = new RectangleF(cardRect.X + pad, cardRect.Bottom - pad - 22, cardRect.Width - pad * 2, 22);
+                g.DrawString(_price, _priceFont, brush, priceRect, priceFormat);
             }
+        }
+
+        private static Color GetGenreColor(string genre)
+        {
+            if (string.IsNullOrEmpty(genre)) return _accentCoral;
+            int hash = genre.ToLowerInvariant().GetHashCode();
+            return _genreColors[Math.Abs(hash) % _genreColors.Length];
         }
 
         private GraphicsPath CreateRoundedPath(Rectangle rect, int radius)

@@ -1,0 +1,12 @@
+﻿root = true
+
+[*]
+charset = utf-8-bom
+end_of_line = crlf
+insert_final_newline = true
+
+[*.{cs,csproj,slnx,config,sql,md,json,xml,resx,props,targets}]
+charset = utf-8-bom
+
+[*.{jpg,jpeg,png,gif,ico,bmp}]
+insert_final_newline = unset

@@ -15,28 +15,6 @@ namespace QuanLyThuVien.Forms
         private Button btnTable;
         private bool isCatalogView = true;
 
-        private static readonly Color[] GradientPairs_Start = {
-            Color.FromArgb(247, 194, 194),   // Soft Coral Pink
-            Color.FromArgb(210, 235, 212),   // Soft Mint Green
-            Color.FromArgb(212, 230, 241),   // Soft Sky Blue
-            Color.FromArgb(254, 249, 231),   // Soft Yellow
-            Color.FromArgb(232, 218, 239),   // Soft Lavender
-            Color.FromArgb(253, 235, 208),   // Soft Peach
-            Color.FromArgb(224, 242, 241),   // Soft Teal
-            Color.FromArgb(242, 239, 233),   // Soft Sand Gray
-        };
-
-        private static readonly Color[] GradientPairs_End = {
-            Color.FromArgb(245, 158, 158),
-            Color.FromArgb(163, 217, 165),
-            Color.FromArgb(169, 204, 227),
-            Color.FromArgb(249, 231, 159),
-            Color.FromArgb(195, 155, 211),
-            Color.FromArgb(245, 203, 167),
-            Color.FromArgb(178, 223, 219),
-            Color.FromArgb(222, 217, 206),
-        };
-
         private string imagesDir => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "QuanLyThuVien", "Images", "Sach");
 
         public FormSach()
@@ -214,16 +192,12 @@ namespace QuanLyThuVien.Forms
                     decimal giaTien = Convert.ToDecimal(row["GiaTien"]);
                     string hinhAnh = row["HinhAnh"].ToString() ?? "";
 
-                    int colorIndex = index % GradientPairs_Start.Length;
-
                     var card = new BookCardControl
                     {
                         Title = tenSach,
                         Author = tacGia,
                         Price = $"{giaTien:N0}đ",
                         Genre = theLoai,
-                        GradientStart = GradientPairs_Start[colorIndex],
-                        GradientEnd = GradientPairs_End[colorIndex],
                         Tag = maSach
                     };
 

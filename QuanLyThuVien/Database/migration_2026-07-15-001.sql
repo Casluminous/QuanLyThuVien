@@ -1,4 +1,4 @@
--- Migration: Fix live QuanLyThuVien database schema
+﻿-- Migration: Fix live QuanLyThuVien database schema
 -- Run ONCE against the live database. Idempotent where possible.
 
 USE QuanLyThuVien;

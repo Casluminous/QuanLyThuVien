@@ -30,16 +30,6 @@ namespace QuanLyThuVien.Forms
 
             int y = 60;
 
-            // Card thống kê
-            var pnlStats = new RoundedPanel
-            {
-                Location = new Point(10, y),
-                Size = new Size(Width - 30, 100),
-                BackColor = Color.White,
-                BorderRadius = 15,
-                Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
-            };
-
             int tongSach = DataAccess.CountSach();
             int tongDG = DataAccess.CountDocGia();
             int dangMuon = DataAccess.CountPhieuMuonDangMo();
@@ -50,19 +40,32 @@ namespace QuanLyThuVien.Forms
                 ("Tổng sách", tongSach.ToString(), AppColors.Primary),
                 ("Tổng ĐG", tongDG.ToString(), AppColors.Success),
                 ("Đang mượn", dangMuon.ToString(), AppColors.Warning),
-                ("Tổng tiền phạt", $"{tienPhat:N0}đ", AppColors.Danger)
+                ("Tổng tiền phạt", $"{tienPhat:N0}đ", AppColors.TextPrimary)
             };
 
-            int sx = 20;
-            foreach (var (label, value, color) in stats)
+            var statCards = new RoundedPanel[stats.Length];
+            int gap = 12;
+            int cardW = (Width - 30 - gap * (stats.Length - 1)) / stats.Length;
+            for (int i = 0; i < stats.Length; i++)
             {
+                var (label, value, color) = stats[i];
+                int cx = 10 + i * (cardW + gap);
+
+                statCards[i] = new RoundedPanel
+                {
+                    Location = new Point(cx, y),
+                    Size = new Size(cardW, 110),
+                    BackColor = Color.White,
+                    BorderRadius = 12
+                };
+
                 var lblV = new Label
                 {
                     Text = value,
-                    Font = new Font("Segoe UI", 20F, FontStyle.Bold),
+                    Font = new Font("Segoe UI", 22F, FontStyle.Bold),
                     ForeColor = color,
                     AutoSize = true,
-                    Location = new Point(sx, 15)
+                    Location = new Point(15, 15)
                 };
                 var lblL = new Label
                 {
@@ -70,14 +73,13 @@ namespace QuanLyThuVien.Forms
                     Font = new Font("Segoe UI", 9F),
                     ForeColor = AppColors.TextSecondary,
                     AutoSize = true,
-                    Location = new Point(sx, 65)
+                    Location = new Point(15, 75)
                 };
-                pnlStats.Controls.Add(lblV);
-                pnlStats.Controls.Add(lblL);
-                sx += (Width - 30) / 4;
+                statCards[i].Controls.Add(lblV);
+                statCards[i].Controls.Add(lblL);
+                Controls.Add(statCards[i]);
             }
-            Controls.Add(pnlStats);
-            y += 120;
+            y += 110;
 
             // Top sách mượn nhiều
             var lblTopSach = new Label
@@ -142,7 +144,13 @@ namespace QuanLyThuVien.Forms
 
             Resize += (s, e) =>
             {
-                pnlStats.Width = Width - 30;
+                int gap = 12;
+                int cardW = (Width - 30 - gap * (stats.Length - 1)) / stats.Length;
+                for (int i = 0; i < statCards.Length; i++)
+                {
+                    statCards[i].Location = new Point(10 + i * (cardW + gap), statCards[i].Location.Y);
+                    statCards[i].Width = cardW;
+                }
                 dgvTopSach.Width = Width - 30;
                 dgvHetSach.Width = Width - 30;
             };

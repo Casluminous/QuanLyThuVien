@@ -67,7 +67,7 @@ namespace QuanLyThuVien.Forms
             };
             dgv.Columns.Add("MaTG", "Mã");
             dgv.Columns.Add("TenTG", "Tên tác giả");
-            dgv.Columns.Add("QuocTich", "Quốc tịch");
+            dgv.Columns.Add("QuocTia", "Quốc tịch");
             dgv.Columns.Add("GhiChu", "Ghi chú");
             dgv.Columns.Add("btnSửa", "Sửa");
             dgv.Columns.Add("btnXóa", "Xóa");
@@ -78,7 +78,7 @@ namespace QuanLyThuVien.Forms
             {
                 var dt = DataAccess.GetAllTacGia();
                 foreach (DataRow row in dt.Rows)
-                    dgv.Rows.Add(row["MaTG"], row["TenTG"], row["QuocTich"], row["GhiChu"], "✏️ Sửa", "🗑 Xóa");
+                    dgv.Rows.Add(row["MaTG"], row["TenTG"], row["QuocTia"], row["GhiChu"], "✏️ Sửa", "🗑 Xóa");
             }
             catch (Exception ex) { MessageBox.Show("Lỗi thao tác: " + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error); }
         }
@@ -92,7 +92,7 @@ namespace QuanLyThuVien.Forms
             {
                 ShowInputDialog(maTG,
                     dgv.Rows[e.RowIndex].Cells["TenTG"].Value?.ToString() ?? "",
-                    dgv.Rows[e.RowIndex].Cells["QuocTich"].Value?.ToString() ?? "",
+                    dgv.Rows[e.RowIndex].Cells["QuocTia"].Value?.ToString() ?? "",
                     dgv.Rows[e.RowIndex].Cells["GhiChu"].Value?.ToString() ?? "");
             }
             else if (dgv.Columns[e.ColumnIndex].Name == "btnXóa")
