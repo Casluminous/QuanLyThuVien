@@ -165,16 +165,13 @@ namespace QuanLyThuVien.Forms
                 MaximizeBox = false, MinimizeBox = false
             };
 
-            var dgData = DataAccess.GetAllDocGia();
+            var dgData = DataAccess.GetBorrowEligibleReaders();
             var sachData = DataAccess.GetSachAvailable();
 
             var lbl1 = new Label { Text = "Độc giả:", Location = new Point(20, 20), AutoSize = true };
             var cboDG = new ModernComboBox { Location = new Point(140, 17), Size = new Size(310, 30), DropDownStyle = ComboBoxStyle.DropDownList };
             foreach (DataRow row in dgData.Rows)
-            {
-                if ((bool)row["TrangThai"])
-                    cboDG.Items.Add(new ComboItem(row["HoTen"].ToString()!, Convert.ToInt32(row["MaDG"])));
-            }
+                cboDG.Items.Add(new ComboItem(row["HoTen"].ToString()!, Convert.ToInt32(row["MaDG"])));
             if (cboDG.Items.Count > 0) cboDG.SelectedIndex = 0;
 
             var lbl2 = new Label { Text = "Ngày mượn:", Location = new Point(20, 65), AutoSize = true };
@@ -251,10 +248,10 @@ namespace QuanLyThuVien.Forms
                     TrangThai = "Đang mượn"
                 };
 
-                bool ok = DataAccess.InsertPhieuMuonFull(pm, sachMuon);
+                bool ok = DataAccess.InsertPhieuMuonFull(pm, sachMuon, out string? failureReason);
                 if (!ok)
                 {
-                    MessageBox.Show("Không đủ tồn kho cho một hoặc nhiều sách!", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    MessageBox.Show(failureReason ?? "Không thể tạo phiếu mượn.", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
                 }
 

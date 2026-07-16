@@ -203,7 +203,19 @@ namespace QuanLyThuVien.Forms
                     }
                 }
                 if (items.Count == 0) { frm.Close(); return; }
-                DataAccess.TraNhieuSach(maPM, items);
+                try
+                {
+                    if (!DataAccess.TraNhieuSach(maPM, items))
+                    {
+                        MessageBox.Show("Không thể xác nhận trả sách vì dữ liệu đã thay đổi. Vui lòng tải lại danh sách.", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Không thể xác nhận trả sách: " + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
                 frm.Close();
                 LoadData();
             };
