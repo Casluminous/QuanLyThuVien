@@ -15,7 +15,7 @@ namespace QuanLyThuVien.Forms
         private Button btnTable;
         private bool isCatalogView = true;
 
-        private string imagesDir => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "QuanLyThuVien", "Images", "Sach");
+        private readonly BookImageStorage _bookImageStorage = new();
 
         public FormSach()
         {
@@ -32,7 +32,6 @@ namespace QuanLyThuVien.Forms
         private void LoadData()
         {
             Controls.Clear();
-            Directory.CreateDirectory(imagesDir);
 
             // Header
             Controls.Add(new Label
@@ -201,16 +200,10 @@ namespace QuanLyThuVien.Forms
                         Tag = maSach
                     };
 
-                    // Load cover image
-                    if (!string.IsNullOrEmpty(hinhAnh) && File.Exists(hinhAnh))
+                    using var coverImage = _bookImageStorage.LoadImage(hinhAnh);
+                    if (coverImage != null)
                     {
-                        try
-                        {
-                            using (var fs = new FileStream(hinhAnh, FileMode.Open, FileAccess.Read))
-                            using (var original = Image.FromStream(fs))
-                                card.CoverImage = original.GetThumbnailImage(400, 300, null, IntPtr.Zero);
-                        }
-                        catch { }
+                        card.CoverImage = coverImage.GetThumbnailImage(400, 300, null, IntPtr.Zero);
                     }
 
                     card.Click += BookCard_Click;
@@ -227,22 +220,54 @@ namespace QuanLyThuVien.Forms
 
         private void LayoutCatalog()
         {
-            if (pnlCatalog.Controls.Count == 0) return;
+            if (pnlCatalog == null) return;
 
-            int cols = 3;
-            int cardWidth = 250;
-            int cardHeight = 340;
-            int spacingX = 20;
-            int spacingY = 20;
-            int startX = 10;
-            int startY = 10;
+            const int cardWidth = 240;
+            const int cardHeight = 340;
+            const int spacingX = 20;
+            const int spacingY = 20;
+            const int startX = 10;
+            const int startY = 10;
+
+            if (pnlCatalog.Controls.Count == 0)
+            {
+                pnlCatalog.AutoScrollMinSize = Size.Empty;
+                return;
+            }
+
+            int GetColumnCount(int panelWidth)
+            {
+                int availableWidth = Math.Max(0, panelWidth - startX * 2);
+                return Math.Max(1, (availableWidth + spacingX) / (cardWidth + spacingX));
+            }
+
+            int GetContentHeight(int columns)
+            {
+                int rowCount = (pnlCatalog.Controls.Count + columns - 1) / columns;
+                return startY * 2 + rowCount * cardHeight + (rowCount - 1) * spacingY;
+            }
+
+            int cols = GetColumnCount(pnlCatalog.Width);
+            int contentHeight = GetContentHeight(cols);
+
+            if (contentHeight > pnlCatalog.Height)
+            {
+                cols = GetColumnCount(pnlCatalog.Width - SystemInformation.VerticalScrollBarWidth);
+                contentHeight = GetContentHeight(cols);
+            }
 
             for (int i = 0; i < pnlCatalog.Controls.Count; i++)
             {
                 int row = i / cols;
                 int col = i % cols;
-                pnlCatalog.Controls[i].Location = new Point(startX + col * (cardWidth + spacingX), startY + row * (cardHeight + spacingY));
+                Control card = pnlCatalog.Controls[i];
+                card.Size = new Size(cardWidth, cardHeight);
+                card.Location = new Point(
+                    startX + col * (cardWidth + spacingX),
+                    startY + row * (cardHeight + spacingY));
             }
+
+            pnlCatalog.AutoScrollMinSize = new Size(0, contentHeight);
         }
 
         private void LoadTableData()
@@ -323,16 +348,7 @@ namespace QuanLyThuVien.Forms
                 BorderStyle = BorderStyle.None
             };
 
-            if (!string.IsNullOrEmpty(sach.HinhAnh) && File.Exists(sach.HinhAnh))
-            {
-                try
-                {
-                    using (var fs = new FileStream(sach.HinhAnh, FileMode.Open, FileAccess.Read))
-                    using (var original = Image.FromStream(fs))
-                        pbCover.Image = (Image)original.Clone();
-                }
-                catch { }
-            }
+            SetPictureImage(pbCover, _bookImageStorage.LoadImage(sach.HinhAnh));
 
             var btnUpload = new ModernButton
             {
@@ -359,32 +375,25 @@ namespace QuanLyThuVien.Forms
 
             btnLuuAnh.Click += (s, e) =>
             {
-                if (pendingCroppedImage == null) return;
+                Image? croppedImage = pendingCroppedImage;
+                if (croppedImage == null) return;
+
+                string? createdImageKey = null;
                 try
                 {
-                    string destFile = Path.Combine(imagesDir, $"{maSach}_{Guid.NewGuid():N}.jpg");
-                    pendingCroppedImage.Save(destFile, System.Drawing.Imaging.ImageFormat.Jpeg);
-                    sach.HinhAnh = destFile;
+                    createdImageKey = _bookImageStorage.SaveCroppedImage(croppedImage);
+                    DataAccess.UpdateSachImage(maSach, createdImageKey);
+                    sach.HinhAnh = createdImageKey;
+                    SetPictureImage(pbCover, _bookImageStorage.LoadImage(createdImageKey));
 
-                    using (var conn = DataAccess.GetConnection())
-                    {
-                        conn.Open();
-                        using var cmd = new System.Data.SqlClient.SqlCommand("UPDATE Sach SET HinhAnh = @HinhAnh WHERE MaSach = @MaSach", conn);
-                        cmd.Parameters.AddWithValue("@HinhAnh", destFile);
-                        cmd.Parameters.AddWithValue("@MaSach", maSach);
-                        cmd.ExecuteNonQuery();
-                    }
-
-                    using var fs = new FileStream(destFile, FileMode.Open, FileAccess.Read);
-                    pbCover.Image = Image.FromStream(fs);
-
-                    pendingCroppedImage.Dispose();
+                    croppedImage.Dispose();
                     pendingCroppedImage = null;
                     btnLuuAnh.Visible = false;
                     btnUpload.Visible = true;
                 }
                 catch (Exception ex)
                 {
+                    _bookImageStorage.DeleteLocalAsset(createdImageKey);
                     MessageBox.Show("Lỗi khi lưu ảnh: " + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             };
@@ -398,17 +407,17 @@ namespace QuanLyThuVien.Forms
                     {
                         try
                         {
-                            var original = Image.FromFile(ofd.FileName);
+                            using var original = Image.FromFile(ofd.FileName);
                             using var cropForm = new FormCropImage(original);
                             var result = cropForm.ShowDialog();
                             if (result == DialogResult.OK && cropForm.CroppedImage != null)
                             {
+                                pendingCroppedImage?.Dispose();
                                 pendingCroppedImage = cropForm.CroppedImage;
-                                pbCover.Image = pendingCroppedImage;
+                                SetPictureImage(pbCover, (Image)pendingCroppedImage.Clone());
                                 btnUpload.Visible = false;
                                 btnLuuAnh.Visible = true;
                             }
-                            original.Dispose();
                         }
                         catch (Exception ex)
                         {
@@ -615,17 +624,9 @@ namespace QuanLyThuVien.Forms
             var txtHinhAnh = new ModernTextBox { Text = existing?.HinhAnh ?? "", Location = new Point(140, y), Size = new Size(170, 30), ReadOnly = true };
             var btnChonAnh = new ModernButton { Text = "...", Location = new Point(320, y), Size = new Size(40, 30), BaseColor = AppColors.TextSecondary, BorderRadius = 4 };
             var pbPreview = new PictureBox { Size = new Size(100, 80), Location = new Point(140, y + 35), SizeMode = PictureBoxSizeMode.Zoom, BackColor = Color.FromArgb(240, 240, 240) };
+            string? selectedImagePath = null;
 
-            if (!string.IsNullOrEmpty(existing?.HinhAnh) && File.Exists(existing.HinhAnh))
-            {
-                try
-                {
-                    using var fs = new FileStream(existing.HinhAnh, FileMode.Open, FileAccess.Read);
-                    using var original = Image.FromStream(fs);
-                    pbPreview.Image = (Image)original.Clone();
-                }
-                catch { }
-            }
+            SetPictureImage(pbPreview, _bookImageStorage.LoadImage(existing?.HinhAnh));
 
             btnChonAnh.Click += (s, e) =>
             {
@@ -634,13 +635,9 @@ namespace QuanLyThuVien.Forms
                     ofd.Filter = "Image files|*.jpg;*.jpeg;*.png;*.bmp;*.gif|All files|*.*";
                     if (ofd.ShowDialog() == DialogResult.OK)
                     {
-                        txtHinhAnh.Text = ofd.FileName;
-                        try
-                        {
-                            using var fs = new FileStream(ofd.FileName, FileMode.Open, FileAccess.Read);
-                            pbPreview.Image = Image.FromStream(fs);
-                        }
-                        catch { }
+                        selectedImagePath = ofd.FileName;
+                        txtHinhAnh.Text = Path.GetFileName(ofd.FileName);
+                        SetPictureImage(pbPreview, _bookImageStorage.LoadImage(selectedImagePath));
                     }
                 }
             };
@@ -654,35 +651,41 @@ namespace QuanLyThuVien.Forms
                 if (cboTL.SelectedItem is not ComboItem tl || cboTG.SelectedItem is not ComboItem tg || cboNXB.SelectedItem is not ComboItem nxb)
                 { MessageBox.Show("Chọn đầy đủ thông tin!"); return; }
 
-                string hinhAnh = txtHinhAnh.Text.Trim();
-                if (!string.IsNullOrEmpty(hinhAnh) && File.Exists(hinhAnh))
+                string hinhAnh = existing?.HinhAnh ?? "";
+                string? createdImageKey = null;
+                try
                 {
-                    string destFile = Path.Combine(imagesDir, $"{existing?.MaSach ?? 0}_{Path.GetFileName(hinhAnh)}");
-                    try
+                    if (!string.IsNullOrWhiteSpace(selectedImagePath))
                     {
-                        File.Copy(hinhAnh, destFile, true);
-                        hinhAnh = destFile;
+                        createdImageKey = _bookImageStorage.ImportFile(selectedImagePath);
+                        hinhAnh = createdImageKey;
                     }
-                    catch { }
+
+                    var sach = new Sach
+                    {
+                        MaSach = existing?.MaSach ?? 0,
+                        TenSach = txt1.Text.Trim(),
+                        MaISBN = txt2.Text.Trim(),
+                        MaTL = tl.Value,
+                        MaTG = tg.Value,
+                        MaNXB = nxb.Value,
+                        NamXB = (int)nudNam.Value,
+                        SoLuong = (int)nudSL.Value,
+                        GiaTien = nudGia.Value,
+                        MoTa = txtMoTa.Text.Trim(),
+                        HinhAnh = hinhAnh
+                    };
+
+                    if (existing != null) DataAccess.UpdateSach(sach);
+                    else DataAccess.InsertSach(sach);
+                }
+                catch (Exception ex)
+                {
+                    _bookImageStorage.DeleteLocalAsset(createdImageKey);
+                    MessageBox.Show("Không thể lưu ảnh bìa: " + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
                 }
 
-                var sach = new Sach
-                {
-                    MaSach = existing?.MaSach ?? 0,
-                    TenSach = txt1.Text.Trim(),
-                    MaISBN = txt2.Text.Trim(),
-                    MaTL = tl.Value,
-                    MaTG = tg.Value,
-                    MaNXB = nxb.Value,
-                    NamXB = (int)nudNam.Value,
-                    SoLuong = (int)nudSL.Value,
-                    GiaTien = nudGia.Value,
-                    MoTa = txtMoTa.Text.Trim(),
-                    HinhAnh = hinhAnh
-                };
-
-                if (existing != null) DataAccess.UpdateSach(sach);
-                else DataAccess.InsertSach(sach);
                 frm.Close();
                 LoadData();
             };
@@ -690,6 +693,14 @@ namespace QuanLyThuVien.Forms
 
             frm.Controls.AddRange(new Control[] { lbl1, txt1, lbl2, txt2, lbl3, cboTL, lbl4, cboTG, lbl5, cboNXB, lbl6, nudNam, lbl7, nudSL, lbl8, nudGia, lbl9, txtMoTa, lbl10, txtHinhAnh, btnChonAnh, pbPreview, btnOk, btnCancel });
             frm.ShowDialog();
+        }
+
+        private static void SetPictureImage(PictureBox pictureBox, Image? image)
+        {
+            Image? previousImage = pictureBox.Image;
+            pictureBox.Image = image;
+            if (!ReferenceEquals(previousImage, image))
+                previousImage?.Dispose();
         }
 
         private class ComboItem
