@@ -252,6 +252,9 @@ namespace QuanLyThuVien.Data
         public static int DeleteDocGia(int maDG) =>
             ExecuteNonQuery("DELETE FROM DocGia WHERE MaDG=@ma", new SqlParameter("@ma", maDG));
 
+        public static DataTable GetBorrowEligibleReaders() =>
+            ExecuteQuery("SELECT * FROM DocGia WHERE TrangThai=1 AND HanSuDung>=CAST(GETDATE() AS DATE)");
+
         // ---- PhieuMuon ----
         public static DataTable GetAllPhieuMuon() =>
             ExecuteQuery(@"SELECT pm.*, dg.HoTen AS TenDocGia, nv.HoTen AS TenNhanVien
@@ -299,8 +302,21 @@ namespace QuanLyThuVien.Data
             }
         }
 
-        public static bool InsertPhieuMuonFull(PhieuMuon pm, List<(int maSach, int soLuong)> chiTiet)
+        public static bool InsertPhieuMuonFull(PhieuMuon pm, List<(int maSach, int soLuong)> chiTiet, out string? failureReason)
         {
+            failureReason = null;
+            if (pm.NgayMuon.Date > DateTime.Today)
+            {
+                failureReason = "Ngày mượn không được ở tương lai.";
+                return false;
+            }
+
+            if (pm.HanTra.Date < pm.NgayMuon.Date)
+            {
+                failureReason = "Hạn trả không được trước ngày mượn.";
+                return false;
+            }
+
             using (var conn = GetConnection())
             {
                 conn.Open();
@@ -308,6 +324,19 @@ namespace QuanLyThuVien.Data
                 {
                     try
                     {
+                        using (var cmdReader = new SqlCommand(@"SELECT 1
+                            FROM DocGia WITH (UPDLOCK, HOLDLOCK)
+                            WHERE MaDG=@ma AND TrangThai=1 AND HanSuDung>=CAST(GETDATE() AS DATE)", conn, tran))
+                        {
+                            cmdReader.Parameters.AddWithValue("@ma", pm.MaDG);
+                            if (cmdReader.ExecuteScalar() == null)
+                            {
+                                failureReason = "Thẻ độc giả đã hết hạn hoặc không còn hoạt động.";
+                                tran.Rollback();
+                                return false;
+                            }
+                        }
+
                         int maPM;
                         using (var cmd = new SqlCommand(@"INSERT INTO PhieuMuon(MaDG,MaNV,NgayMuon,HanTra,TrangThai)
                                                          VALUES(@madg,@manv,@nm,@ht,@tt); SELECT SCOPE_IDENTITY();", conn, tran))
@@ -329,6 +358,7 @@ namespace QuanLyThuVien.Data
                                 int affected = cmdStock.ExecuteNonQuery();
                                 if (affected == 0)
                                 {
+                                    failureReason = "Không đủ tồn kho cho một hoặc nhiều sách.";
                                     tran.Rollback();
                                     return false;
                                 }

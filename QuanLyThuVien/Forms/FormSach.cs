@@ -607,7 +607,7 @@ namespace QuanLyThuVien.Forms
             var nudNam = new NumericUpDown { Location = new Point(140, y), Size = new Size(100, 30), Minimum = 1900, Maximum = 2030, Value = existing?.NamXB ?? 2024 };
             y += 40;
 
-            var lbl7 = new Label { Text = "Số lượng:", Location = new Point(20, y + 3), AutoSize = true };
+            var lbl7 = new Label { Text = "Số lượng còn sẵn:", Location = new Point(20, y + 3), AutoSize = true };
             var nudSL = new NumericUpDown { Location = new Point(140, y), Size = new Size(100, 30), Minimum = 0, Maximum = 10000, Value = existing?.SoLuong ?? 1 };
             y += 40;
 

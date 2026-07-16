@@ -170,12 +170,22 @@ namespace QuanLyThuVien.Forms
             var lbl7 = new Label { Text = "Hạn sử dụng:", Location = new Point(20, 260), AutoSize = true };
             var dtpHSD = new DateTimePicker { Location = new Point(140, 257), Size = new Size(240, 30), Format = DateTimePickerFormat.Short, Value = existing?.HanSuDung ?? DateTime.Now.AddYears(1) };
 
+            void EnsureExpiryIsValid()
+            {
+                if (dtpHSD.Value.Date < dtpLT.Value.Date)
+                    dtpHSD.Value = dtpLT.Value.Date;
+                dtpHSD.MinDate = dtpLT.Value.Date;
+            }
+            dtpLT.ValueChanged += (s, e) => EnsureExpiryIsValid();
+            EnsureExpiryIsValid();
+
             var btnOk = new ModernButton { Text = "Lưu", Location = new Point(140, 320), Size = new Size(120, 40), BaseColor = AppColors.Primary, BorderRadius = 8 };
             var btnCancel = new ModernButton { Text = "Hủy", Location = new Point(280, 320), Size = new Size(120, 40), BaseColor = AppColors.TextSecondary, BorderRadius = 8 };
 
             btnOk.Click += (s, e) =>
             {
                 if (string.IsNullOrWhiteSpace(txt1.Text)) { MessageBox.Show("Nhập họ tên!"); return; }
+                if (dtpHSD.Value.Date < dtpLT.Value.Date) { MessageBox.Show("Hạn sử dụng không được trước ngày lập thẻ!"); return; }
                 try
                 {
                     var dg = new DocGia

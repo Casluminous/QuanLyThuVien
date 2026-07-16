@@ -106,6 +106,7 @@ namespace QuanLyThuVien.Forms
         {
             if (e.RowIndex < 0) return;
             int maNV = Convert.ToInt32(dgv.Rows[e.RowIndex].Cells["MaNV"].Value);
+            var selectedRow = dgv.Rows[e.RowIndex];
 
             if (dgv.Columns[e.ColumnIndex].Name == "btnS\u1eeda")
             {
@@ -124,7 +125,11 @@ namespace QuanLyThuVien.Forms
                     return;
                 }
 
-                if (DataAccess.CountActiveAdmins() <= 1)
+                bool deletingActiveAdmin =
+                    selectedRow.Cells["VaiTro"].Value?.ToString() == "Admin" &&
+                    selectedRow.Cells["TrangThai"].Value?.ToString() == "Hoạt động";
+
+                if (deletingActiveAdmin && DataAccess.CountActiveAdmins() <= 1)
                 {
                     MessageBox.Show("Không thể xóa admin cuối cùng!", "Cảnh báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
