@@ -1,0 +1,44 @@
+{
+  "scannedAt": "2026-07-22",
+  "project": "QuanLyThuVien",
+  "scope": [
+    "QuanLyThuVien/Forms/FormDangNhap.cs",
+    "QuanLyThuVien/Forms/FormDashboard.cs"
+  ],
+  "designSystem": null,
+  "fontStack": {
+    "display": "Segoe UI Variable Display / Segoe UI Bold",
+    "body": "Segoe UI",
+    "source": "existing WinForms controls and Library Teal specification"
+  },
+  "palette": {
+    "name": "Library Teal",
+    "source": "QuanLyThuVien/Helpers/AppColors.cs"
+  },
+  "motion": {
+    "stance": "motion-cut",
+    "detail": "instant focus plus restrained hover and pressed states"
+  },
+  "spacing": {
+    "base": 4,
+    "primaryRhythm": 8,
+    "unit": "px"
+  },
+  "framework": {
+    "name": ".NET Windows Forms",
+    "target": "net10.0-windows",
+    "charts": "LiveChartsCore.SkiaSharpView.WinForms 2.0.5"
+  },
+  "preserve": [
+    "Library Teal identity",
+    "Segoe UI typography",
+    "database and permissions",
+    "login and dashboard data behavior"
+  ],
+  "introduce": [
+    "Operational Workbench macrostructure",
+    "warm auth split layout",
+    "task-first dashboard hierarchy",
+    "complete focus and interaction states"
+  ]
+}
