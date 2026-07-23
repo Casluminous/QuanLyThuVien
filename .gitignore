@@ -20,6 +20,11 @@ artifacts/
 ## Backup directories
 backup-*/
 
+## Local design and build workspaces
+.superpowers/
+.hallmark/log.json
+tmp/
+
 ## OS
 Thumbs.db
 .DS_Store

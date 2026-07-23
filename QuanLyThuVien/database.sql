@@ -81,11 +81,34 @@ CREATE TABLE ChiTietPhieuMuon (
     SoLuong INT DEFAULT 1,
     NgayTra DATE NULL,
     TienPhat DECIMAL(18,2) DEFAULT 0,
+    SoLuongMat INT NOT NULL DEFAULT 0,
+    TienDenMatSach DECIMAL(18,2) NOT NULL DEFAULT 0,
     PRIMARY KEY (MaPhieuMuon, MaSach)
 )
 
-IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_NhanVien_TenDangNhap' AND object_id = OBJECT_ID('NhanVien'))
-CREATE INDEX IX_NhanVien_TenDangNhap ON NhanVien(TenDangNhap)
+IF OBJECT_ID('ThanhToanPhat', 'U') IS NULL
+CREATE TABLE ThanhToanPhat (
+    MaThanhToan INT IDENTITY(1,1) PRIMARY KEY,
+    MaPhieuMuon INT NOT NULL FOREIGN KEY REFERENCES PhieuMuon(MaPhieuMuon),
+    SoTien DECIMAL(18,2) NOT NULL CHECK (SoTien > 0),
+    NgayThu DATETIME2 NOT NULL DEFAULT SYSDATETIME(),
+    MaNV INT NOT NULL FOREIGN KEY REFERENCES NhanVien(MaNV),
+    GhiChu NVARCHAR(250) NOT NULL DEFAULT N''
+)
+
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_ThanhToanPhat_MaPhieuMuon' AND object_id = OBJECT_ID('ThanhToanPhat'))
+CREATE INDEX IX_ThanhToanPhat_MaPhieuMuon ON ThanhToanPhat(MaPhieuMuon)
+
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_ThanhToanPhat_NgayThu' AND object_id = OBJECT_ID('ThanhToanPhat'))
+CREATE INDEX IX_ThanhToanPhat_NgayThu ON ThanhToanPhat(NgayThu)
+
+IF COL_LENGTH('ChiTietPhieuMuon', 'SoLuongMat') IS NULL
+    ALTER TABLE ChiTietPhieuMuon ADD SoLuongMat INT NOT NULL
+        CONSTRAINT DF_ChiTietPM_SoLuongMat DEFAULT 0 WITH VALUES
+
+IF COL_LENGTH('ChiTietPhieuMuon', 'TienDenMatSach') IS NULL
+    ALTER TABLE ChiTietPhieuMuon ADD TienDenMatSach DECIMAL(18,2) NOT NULL
+        CONSTRAINT DF_ChiTietPM_TienDenMatSach DEFAULT 0 WITH VALUES
 
 IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_PhieuMuon_MaDG' AND object_id = OBJECT_ID('PhieuMuon'))
 CREATE INDEX IX_PhieuMuon_MaDG ON PhieuMuon(MaDG)
@@ -96,10 +119,28 @@ CREATE INDEX IX_PhieuMuon_TrangThai ON PhieuMuon(TrangThai)
 IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_ChiTietPM_MaPhieuMuon' AND object_id = OBJECT_ID('ChiTietPhieuMuon'))
 CREATE INDEX IX_ChiTietPM_MaPhieuMuon ON ChiTietPhieuMuon(MaPhieuMuon)
 
-IF NOT EXISTS (SELECT 1 FROM NhanVien WHERE TenDangNhap = 'admin')
-INSERT INTO NhanVien(HoTen, TenDangNhap, MatKhau, VaiTro) VALUES
-(N'Admin', 'admin', '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918', 'Admin'),
-(N'Nhân viên 1', 'nhanvien1', '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918', 'NhanVien')
+-- Bảo vệ các giá trị tồn kho, số lượng mượn và tiền phạt ở tầng database.
+IF NOT EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = 'CK_Sach_SoLuong_NonNegative')
+    ALTER TABLE Sach ADD CONSTRAINT CK_Sach_SoLuong_NonNegative CHECK (SoLuong >= 0)
+
+IF NOT EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = 'CK_Sach_GiaTien_NonNegative')
+    ALTER TABLE Sach ADD CONSTRAINT CK_Sach_GiaTien_NonNegative CHECK (GiaTien >= 0)
+
+IF NOT EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = 'CK_ChiTietPM_SoLuong_Positive')
+    ALTER TABLE ChiTietPhieuMuon ADD CONSTRAINT CK_ChiTietPM_SoLuong_Positive CHECK (SoLuong > 0)
+
+IF NOT EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = 'CK_ChiTietPM_TienPhat_NonNegative')
+    ALTER TABLE ChiTietPhieuMuon ADD CONSTRAINT CK_ChiTietPM_TienPhat_NonNegative CHECK (TienPhat >= 0)
+
+IF NOT EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = 'CK_ChiTietPM_SoLuongMat_Valid')
+    EXEC(N'ALTER TABLE ChiTietPhieuMuon ADD CONSTRAINT CK_ChiTietPM_SoLuongMat_Valid
+        CHECK (SoLuongMat >= 0 AND SoLuongMat <= SoLuong)')
+
+IF NOT EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = 'CK_ChiTietPM_TienDenMatSach_NonNegative')
+    EXEC(N'ALTER TABLE ChiTietPhieuMuon ADD CONSTRAINT CK_ChiTietPM_TienDenMatSach_NonNegative
+        CHECK (TienDenMatSach >= 0)')
+
+-- Không seed tài khoản mặc định. FormFirstRun sẽ tạo Admin đầu tiên.
 
 IF NOT EXISTS (SELECT 1 FROM TheLoai)
 INSERT INTO TheLoai(TenTheLoai) VALUES

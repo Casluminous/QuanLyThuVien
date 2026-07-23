@@ -109,6 +109,16 @@ Sibling gaps use the scale. Raw offsets are limited to optical alignment inside 
 - At narrow widths, layout becomes one column in the order KPI → attention → recent loans → trend → category.
 - Dashboard retains both current charts and all current metrics. No database query or business rule is removed.
 
+### Category launcher
+
+- Macrostructure exception: **Index-First · Grouped Launcher**. This page is a navigation index, not a dashboard.
+- Keep the Library Teal surface, Segoe UI hierarchy, 14 px cards and one-pixel rules.
+- Show a short subtitle, then grouped destinations in this order: Vận hành, Con người, Dữ liệu nền, Phân tích.
+- Use responsive launcher tiles: three columns at wide widths, two at medium widths and one at narrow widths.
+- Each tile is a keyboard-accessible button with a concise title, one-line description, visible arrow and immediate focus ring.
+- The Thủ thư destination is rendered only for administrators and is guarded again by centralized navigation.
+- Navigation tiles change screens only; they must not introduce database queries, business rules or page-specific ownership of navigation.
+
 ## What both pages must share
 
 - Library Teal wordmark treatment.

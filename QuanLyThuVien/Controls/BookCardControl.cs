@@ -1,5 +1,7 @@
 ﻿using System.Drawing.Drawing2D;
 
+using QuanLyThuVien.Helpers;
+
 namespace QuanLyThuVien.Controls
 {
     public class BookCardControl : UserControl
@@ -17,25 +19,35 @@ namespace QuanLyThuVien.Controls
         private static readonly Font _genreFont = new Font("Segoe UI", 8F, FontStyle.Bold);
         private static readonly Font _placeholderFont = new Font("Segoe UI", 24F, FontStyle.Bold);
 
-        private static readonly Color _bgColor = Color.FromArgb(252, 250, 247);
-        private static readonly Color _textPrimary = Color.FromArgb(45, 42, 38);
-        private static readonly Color _textSecondary = Color.FromArgb(120, 115, 108);
-        private static readonly Color _accentCoral = Color.FromArgb(232, 132, 107);
-        private static readonly Color _accentMint = Color.FromArgb(143, 188, 143);
-        private static readonly Color _accentLavender = Color.FromArgb(180, 160, 210);
-        private static readonly Color _accentPeach = Color.FromArgb(245, 180, 150);
-        private static readonly Color _accentSky = Color.FromArgb(140, 190, 220);
+        private static readonly Color _bgColor = AppColors.CardBg;
+        private static readonly Color _textPrimary = AppColors.TextPrimary;
+        private static readonly Color _textSecondary = AppColors.TextSecondary;
+        private static readonly Color _accentTeal = AppColors.Primary;
+        private static readonly Color _accentMint = AppColors.Success;
+        private static readonly Color _accentAmber = AppColors.Accent;
+        private static readonly Color _accentBlue = AppColors.Info;
+        private static readonly Color _accentPurple = AppColors.CardPurple;
 
         private static readonly Color[] _genreColors = new[]
         {
-            _accentCoral, _accentMint, _accentLavender, _accentPeach, _accentSky
+            _accentTeal, _accentMint, _accentAmber, _accentBlue, _accentPurple
         };
 
         public string Title { get => _title; set { _title = value; Invalidate(); } }
         public string Author { get => _author; set { _author = value; Invalidate(); } }
         public string Price { get => _price; set { _price = value; Invalidate(); } }
         public string Genre { get => _genre; set { _genre = value; Invalidate(); } }
-        public Image? CoverImage { get => _coverImage; set { _coverImage = value; Invalidate(); } }
+        public Image? CoverImage
+        {
+            get => _coverImage;
+            set
+            {
+                if (ReferenceEquals(_coverImage, value)) return;
+                _coverImage?.Dispose();
+                _coverImage = value;
+                Invalidate();
+            }
+        }
 
         public int BorderRadius { get; set; } = 14;
 
@@ -55,6 +67,16 @@ namespace QuanLyThuVien.Controls
             MouseLeave += (s, e) => { _isHovered = false; Invalidate(); };
         }
 
+        protected override void OnResize(EventArgs e)
+        {
+            base.OnResize(e);
+            if (Width > 0 && Height > 0)
+            {
+                using var path = CreateRoundedPath(ClientRectangle, BorderRadius);
+                Region = new Region(path);
+            }
+        }
+
         protected override void OnPaint(PaintEventArgs e)
         {
             base.OnPaint(e);
@@ -71,14 +93,13 @@ namespace QuanLyThuVien.Controls
                 int shrink = i * 2;
                 var sr = new Rectangle(i, shadowOffset + i, Width - shrink, Height - shadowOffset - shrink);
                 using var path = CreateRoundedPath(sr, BorderRadius);
-                using var brush = new SolidBrush(Color.FromArgb(_isHovered ? 25 : 10, 0, 0, 0));
+                using var brush = new SolidBrush(Color.FromArgb(_isHovered ? 30 : 14, AppColors.Primary.R, AppColors.Primary.G, AppColors.Primary.B));
                 g.FillPath(brush, path);
             }
 
             // White card background
             using (var path = CreateRoundedPath(cardRect, BorderRadius))
             {
-                Region = new Region(path);
                 using var brush = new SolidBrush(_bgColor);
                 g.FillPath(brush, path);
             }
@@ -116,7 +137,7 @@ namespace QuanLyThuVien.Controls
             else
             {
                 // Light placeholder
-                using var bgBrush = new SolidBrush(Color.FromArgb(240, 238, 234));
+                using var bgBrush = new SolidBrush(AppColors.HoverSurface);
                 g.FillRectangle(bgBrush, imageRect);
 
                 // Book icon
@@ -125,11 +146,11 @@ namespace QuanLyThuVien.Controls
                     imageRect.X + (imageRect.Width - iconSize) / 2,
                     imageRect.Y + (imageRect.Height - iconSize) / 2,
                     iconSize, iconSize);
-                using var iconPen = new Pen(Color.FromArgb(200, 200, 195), 2);
+                using var iconPen = new Pen(AppColors.Border, 2);
                 g.DrawRectangle(iconPen, iconRect);
 
                 // + symbol
-                using var plusBrush = new SolidBrush(Color.FromArgb(180, 180, 175));
+                using var plusBrush = new SolidBrush(AppColors.TextMuted);
                 g.DrawString("+", _placeholderFont, plusBrush, imageRect,
                     new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center });
             }
@@ -180,7 +201,7 @@ namespace QuanLyThuVien.Controls
             }
 
             // Price at bottom
-            using (var brush = new SolidBrush(_accentCoral))
+            using (var brush = new SolidBrush(AppColors.Primary))
             {
                 var priceFormat = new StringFormat { Alignment = StringAlignment.Near, LineAlignment = StringAlignment.Far };
                 var priceRect = new RectangleF(cardRect.X + pad, cardRect.Bottom - pad - 22, cardRect.Width - pad * 2, 22);
@@ -190,7 +211,7 @@ namespace QuanLyThuVien.Controls
 
         private static Color GetGenreColor(string genre)
         {
-            if (string.IsNullOrEmpty(genre)) return _accentCoral;
+            if (string.IsNullOrEmpty(genre)) return AppColors.Primary;
             int hash = genre.ToLowerInvariant().GetHashCode();
             return _genreColors[Math.Abs(hash) % _genreColors.Length];
         }
@@ -208,6 +229,12 @@ namespace QuanLyThuVien.Controls
             path.AddArc(rect.X, rect.Bottom - d, d, d, 90, 90);
             path.CloseFigure();
             return path;
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing) _coverImage?.Dispose();
+            base.Dispose(disposing);
         }
     }
 }

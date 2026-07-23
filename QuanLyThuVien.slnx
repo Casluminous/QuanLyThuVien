@@ -1,3 +1,6 @@
 ﻿<Solution>
   <Project Path="QuanLyThuVien/QuanLyThuVien.csproj" />
+  <Project Path="QuanLyThuVien.Chat.Contracts/QuanLyThuVien.Chat.Contracts.csproj" />
+  <Project Path="QuanLyThuVien.ChatApi/QuanLyThuVien.ChatApi.csproj" />
+  <Project Path="QuanLyThuVien.ChatApi.Tests/QuanLyThuVien.ChatApi.Tests.csproj" />
 </Solution>

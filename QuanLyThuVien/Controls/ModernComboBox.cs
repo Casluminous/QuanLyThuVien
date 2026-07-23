@@ -6,10 +6,10 @@ namespace QuanLyThuVien.Controls
     public class ModernComboBox : UserControl
     {
         private readonly ComboBox _comboBox;
-        private int _borderRadius = 12; // Rounded box style
-        private Color _borderColor = Color.FromArgb(213, 209, 201); // #D5D1C9 (Xám cát ấm)
-        private Color _focusedBorderColor = AppColors.Primary;
-        private Color _hoverBorderColor = Color.FromArgb(179, 174, 168); // #B3AEA8
+        private int _borderRadius = 10;
+        private Color _borderColor = AppColors.Border;
+        private Color _focusedBorderColor = AppColors.Focus;
+        private Color _hoverBorderColor = AppColors.TextSecondary;
         private bool _isFocused = false;
         private bool _isHovered = false;
 
@@ -51,6 +51,7 @@ namespace QuanLyThuVien.Controls
             set { _focusedBorderColor = value; Invalidate(); }
         }
 
+        [System.Diagnostics.CodeAnalysis.AllowNull]
         public override Font Font
         {
             get => base.Font;
@@ -79,13 +80,18 @@ namespace QuanLyThuVien.Controls
             {
                 FlatStyle = FlatStyle.Flat,
                 Font = new Font("Segoe UI", 10F),
-                BackColor = Color.White,
+                BackColor = AppColors.CardBg,
                 DropDownStyle = ComboBoxStyle.DropDownList
             };
 
-            BackColor = Color.White;
-            Padding = new Padding(8, 6, 30, 6);
+            BackColor = AppColors.CardBg;
+            // The inner WinForms ComboBox already renders its own drop-down button.
+            // Keep symmetric padding so the selected text can use the full control
+            // width instead of reserving space for a second, custom arrow.
+            Padding = new Padding(8, 6, 8, 6);
             Size = new Size(250, 36);
+            TabStop = true;
+            AccessibleRole = AccessibleRole.ComboBox;
             DoubleBuffered = true;
 
             Controls.Add(_comboBox);
@@ -105,7 +111,7 @@ namespace QuanLyThuVien.Controls
         private void UpdateComboBoxPosition()
         {
             _comboBox.Dock = DockStyle.None;
-            _comboBox.Width = Width - Padding.Left - Padding.Right;
+            _comboBox.Width = Math.Max(1, Width - Padding.Left - Padding.Right);
             _comboBox.Location = new Point(Padding.Left, (Height - _comboBox.Height) / 2);
         }
 
@@ -153,21 +159,6 @@ namespace QuanLyThuVien.Controls
                 }
             }
 
-            // Draw custom dropdown arrow
-            int arrowWidth = 10;
-            int arrowHeight = 6;
-            int arrowX = Width - 20;
-            int arrowY = (Height - arrowHeight) / 2;
-
-            using (var brush = new SolidBrush(Color.FromArgb(100, 116, 139))) // slate-500
-            {
-                Point[] points = {
-                    new Point(arrowX, arrowY),
-                    new Point(arrowX + arrowWidth, arrowY),
-                    new Point(arrowX + arrowWidth / 2, arrowY + arrowHeight)
-                };
-                g.FillPolygon(brush, points);
-            }
         }
 
         private GraphicsPath CreateRoundedPath(Rectangle rect, int radius)

@@ -1,12 +1,14 @@
 ﻿using System.Drawing.Drawing2D;
 
+using QuanLyThuVien.Helpers;
+
 namespace QuanLyThuVien.Controls
 {
     public class CardPanel : Panel
     {
-        public Color AccentColor { get; set; } = Color.FromArgb(52, 152, 219);
+        public Color AccentColor { get; set; } = AppColors.Primary;
         public int AccentWidth { get; set; } = 5;
-        public int BorderRadius { get; set; } = 12;
+        public int BorderRadius { get; set; } = 14;
 
         public CardPanel()
         {
@@ -16,8 +18,18 @@ namespace QuanLyThuVien.Controls
                 ControlStyles.OptimizedDoubleBuffer |
                 ControlStyles.ResizeRedraw,
                 true);
-            BackColor = Color.White;
+            BackColor = AppColors.CardBg;
             Padding = new Padding(20);
+        }
+
+        protected override void OnResize(EventArgs e)
+        {
+            base.OnResize(e);
+            if (Width > 0 && Height > 0)
+            {
+                using var path = CreatePath(ClientRectangle, BorderRadius);
+                Region = new Region(path);
+            }
         }
 
         protected override void OnPaint(PaintEventArgs e)
@@ -28,8 +40,6 @@ namespace QuanLyThuVien.Controls
 
             using (var path = CreatePath(ClientRectangle, BorderRadius))
             {
-                Region = new Region(path);
-
                 using (var brush = new SolidBrush(BackColor))
                     g.FillPath(brush, path);
             }

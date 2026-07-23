@@ -1,16 +1,19 @@
 ﻿using System.Drawing.Drawing2D;
 
+using QuanLyThuVien.Helpers;
+
 namespace QuanLyThuVien.Controls
 {
     public class ModernButton : Button
     {
-        private Color _baseColor = Color.FromArgb(232, 132, 107); // #E8846B Coral
-        private Color _hoverColor = Color.FromArgb(210, 110, 85); // #D26E55 Darker coral
-        private Color _pressedColor = Color.FromArgb(185, 95, 75);
+        private Color _baseColor = AppColors.Primary;
+        private Color _hoverColor = AppColors.PrimaryDark;
+        private Color _pressedColor = Color.FromArgb(19, 78, 74);
         private Color _textColor = Color.White;
-        private int _borderRadius = 20; // Pill-shaped rounded button
+        private int _borderRadius = 12;
         private bool _isHovered = false;
         private bool _isPressed = false;
+        private bool _isFocused = false;
 
         public Color BaseColor { get => _baseColor; set { _baseColor = value; Invalidate(); } }
         public Color HoverColor { get => _hoverColor; set { _hoverColor = value; Invalidate(); } }
@@ -27,7 +30,24 @@ namespace QuanLyThuVien.Controls
             Cursor = Cursors.Hand;
             Font = new Font("Segoe UI", 10F, FontStyle.Bold);
             Size = new Size(120, 40);
+            MinimumSize = new Size(40, 40);
+            TabStop = true;
+            AccessibleRole = AccessibleRole.PushButton;
             SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer, true);
+        }
+
+        protected override void OnGotFocus(EventArgs e)
+        {
+            base.OnGotFocus(e);
+            _isFocused = true;
+            Invalidate();
+        }
+
+        protected override void OnLostFocus(EventArgs e)
+        {
+            base.OnLostFocus(e);
+            _isFocused = false;
+            Invalidate();
         }
 
         protected override void OnMouseEnter(EventArgs e)
@@ -64,13 +84,21 @@ namespace QuanLyThuVien.Controls
             Graphics g = e.Graphics;
             g.SmoothingMode = SmoothingMode.AntiAlias;
 
-            Color bgColor = _isPressed ? _pressedColor : (_isHovered ? _hoverColor : _baseColor);
+            Color bgColor = !Enabled ? Color.FromArgb(190, 205, 202) : _isPressed ? _pressedColor : (_isHovered ? _hoverColor : _baseColor);
 
             using (var path = CreatePath(ClientRectangle, _borderRadius))
             using (var brush = new SolidBrush(bgColor))
                 g.FillPath(brush, path);
 
-            TextRenderer.DrawText(g, Text, Font, ClientRectangle, _textColor,
+            if (_isFocused)
+            {
+                using var focusPen = new Pen(AppColors.Focus, 2F);
+                var focusRect = new Rectangle(1, 1, Math.Max(1, Width - 3), Math.Max(1, Height - 3));
+                using var focusPath = CreatePath(focusRect, Math.Max(2, _borderRadius - 1));
+                g.DrawPath(focusPen, focusPath);
+            }
+
+            TextRenderer.DrawText(g, Text, Font, ClientRectangle, Enabled ? _textColor : AppColors.TextMuted,
                 TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
         }
 

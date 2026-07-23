@@ -2,6 +2,7 @@
 using QuanLyThuVien.Controls;
 using QuanLyThuVien.Data;
 using QuanLyThuVien.Helpers;
+using QuanLyThuVien.Pdf;
 
 namespace QuanLyThuVien.Forms
 {
@@ -17,15 +18,25 @@ namespace QuanLyThuVien.Forms
 
         private void BuildUI()
         {
-            Controls.Clear();
+            ResponsiveUi.DisposeChildren(this);
 
-            Controls.Add(new Label
+            DataGridView? dgvTopSach = null;
+            DataGridView? dgvHetSach = null;
+            var btnExportTop = PageHeader.CreatePrimaryAction("Xuất top PDF", (_, _) =>
             {
-                Text = "Báo cáo & Thống kê",
-                Font = new Font("Segoe UI", 18F, FontStyle.Bold),
-                ForeColor = AppColors.TextPrimary,
-                AutoSize = true,
-                Location = new Point(10, 10)
+                if (dgvTopSach != null) PdfExportService.ExportGrid(dgvTopSach, "Top sách được mượn nhiều nhất", "top-sach-muon", FindForm() is IWin32Window owner ? owner : (IWin32Window)this);
+            }, 125);
+            var btnExportLow = PageHeader.CreatePrimaryAction("Xuất sắp hết PDF", (_, _) =>
+            {
+                if (dgvHetSach != null) PdfExportService.ExportGrid(dgvHetSach, "Sách sắp hết", "sach-sap-het", FindForm() is IWin32Window owner ? owner : (IWin32Window)this);
+            }, 145);
+
+            Controls.Add(new PageHeader("Báo cáo & Thống kê", btnExportTop, btnExportLow)
+            {
+                Dock = DockStyle.None,
+                Location = new Point(10, 0),
+                Size = new Size(Math.Max(0, Width - 30), 56),
+                Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
             });
 
             int y = 60;
@@ -55,8 +66,11 @@ namespace QuanLyThuVien.Forms
                 {
                     Location = new Point(cx, y),
                     Size = new Size(cardW, 110),
-                    BackColor = Color.White,
-                    BorderRadius = 12
+                    BackColor = AppColors.CardBg,
+                    BorderRadius = 14,
+                    BorderColor = AppColors.Border,
+                    BorderSize = 1,
+                    HasShadow = true
                 };
 
                 var lblV = new Label
@@ -93,7 +107,7 @@ namespace QuanLyThuVien.Forms
             Controls.Add(lblTopSach);
             y += 35;
 
-            var dgvTopSach = CreateDataGridView();
+            dgvTopSach = CreateDataGridView();
             dgvTopSach.Location = new Point(10, y);
             dgvTopSach.Size = new Size(Width - 30, 250);
             dgvTopSach.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
@@ -110,7 +124,7 @@ namespace QuanLyThuVien.Forms
                 foreach (DataRow row in dt.Rows)
                     dgvTopSach.Rows.Add(stt++, row["TenSach"], row["SoLanMuon"]);
             }
-            catch { }
+            catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Không tải được bảng sách mượn nhiều: {ex}"); }
             Controls.Add(dgvTopSach);
             y += 270;
 
@@ -126,7 +140,7 @@ namespace QuanLyThuVien.Forms
             Controls.Add(lblHetSach);
             y += 35;
 
-            var dgvHetSach = CreateDataGridView();
+            dgvHetSach = CreateDataGridView();
             dgvHetSach.Location = new Point(10, y);
             dgvHetSach.Size = new Size(Width - 30, 180);
             dgvHetSach.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
@@ -139,7 +153,7 @@ namespace QuanLyThuVien.Forms
                 foreach (DataRow row in dt.Rows)
                     dgvHetSach.Rows.Add(row["TenSach"], row["SoLuong"]);
             }
-            catch { }
+            catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Không tải được bảng sách sắp hết: {ex}"); }
             Controls.Add(dgvHetSach);
 
             Resize += (s, e) =>
@@ -160,9 +174,9 @@ namespace QuanLyThuVien.Forms
         {
             return new ModernDataGridView
             {
-                BackgroundColor = Color.White,
+                BackgroundColor = AppColors.CardBg,
                 BorderStyle = BorderStyle.None,
-                GridColor = Color.FromArgb(230, 230, 230),
+                GridColor = AppColors.Border,
                 RowHeadersVisible = false,
                 AllowUserToAddRows = false,
                 ReadOnly = true,
@@ -178,7 +192,7 @@ namespace QuanLyThuVien.Forms
                 EnableHeadersVisualStyles = false,
                 ColumnHeadersHeight = 35,
                 DefaultCellStyle = new DataGridViewCellStyle { Font = new Font("Segoe UI", 10F) },
-                AlternatingRowsDefaultCellStyle = new DataGridViewCellStyle { BackColor = Color.FromArgb(245, 245, 245) }
+                AlternatingRowsDefaultCellStyle = new DataGridViewCellStyle { BackColor = AppColors.AlternateSurface }
             };
         }
     }

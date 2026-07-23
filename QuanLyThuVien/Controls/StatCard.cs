@@ -8,16 +8,16 @@ namespace QuanLyThuVien.Controls
         private string _title = "";
         private string _value = "";
         private string _unit = "";
-        private Color _accentColor = Color.FromArgb(232, 132, 107);
+        private Color _accentColor = AppColors.Primary;
 
-        public string Title { get => _title; set { _title = value; Invalidate(); } }
-        public string Value { get => _value; set { _value = value; Invalidate(); } }
-        public string Unit { get => _unit; set { _unit = value; Invalidate(); } }
+        public string Title { get => _title; set { _title = value; UpdateAccessibility(); Invalidate(); } }
+        public string Value { get => _value; set { _value = value; UpdateAccessibility(); Invalidate(); } }
+        public string Unit { get => _unit; set { _unit = value; UpdateAccessibility(); Invalidate(); } }
         public Color AccentColor { get => _accentColor; set { _accentColor = value; Invalidate(); } }
-        public int BorderRadius { get; set; } = 12;
+        public int BorderRadius { get; set; } = 14;
 
-        private static readonly Font _titleFont = new Font("Segoe UI", 9F, FontStyle.Regular);
-        private static readonly Font _valueFont = new Font("Segoe UI", 26F, FontStyle.Bold);
+        private static readonly Font _titleFont = new Font("Segoe UI Semibold", 9F, FontStyle.Bold);
+        private static readonly Font _valueFont = new Font("Segoe UI", 24F, FontStyle.Bold);
         private static readonly Font _unitFont = new Font("Segoe UI", 9F, FontStyle.Regular);
 
         public StatCard()
@@ -26,9 +26,22 @@ namespace QuanLyThuVien.Controls
                 ControlStyles.UserPaint |
                 ControlStyles.AllPaintingInWmPaint |
                 ControlStyles.OptimizedDoubleBuffer |
-                ControlStyles.ResizeRedraw,
+                ControlStyles.ResizeRedraw |
+                ControlStyles.SupportsTransparentBackColor,
                 true);
-            BackColor = Color.White;
+            BackColor = Color.Transparent;
+            TabStop = false;
+            AccessibleRole = AccessibleRole.StaticText;
+        }
+
+        protected override void OnResize(EventArgs e)
+        {
+            base.OnResize(e);
+            if (Width > 0 && Height > 0)
+            {
+                using var path = CreateRoundedPath(ClientRectangle, BorderRadius);
+                Region = new Region(path);
+            }
         }
 
         protected override void OnPaint(PaintEventArgs e)
@@ -38,39 +51,30 @@ namespace QuanLyThuVien.Controls
             g.SmoothingMode = SmoothingMode.AntiAlias;
             g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
 
-            int shadowSize = 4;
-            var cardRect = new Rectangle(0, shadowSize, Width, Height - shadowSize);
+            const int shadowSize = 3;
+            var cardRect = new Rectangle(1, 1, Math.Max(1, Width - shadowSize - 2), Math.Max(1, Height - shadowSize - 2));
+            var shadowRect = new Rectangle(cardRect.X + 2, cardRect.Y + 2, cardRect.Width, cardRect.Height);
 
-            // Draw subtle shadow
-            for (int i = shadowSize; i >= 1; i--)
-            {
-                var shadowRect = new Rectangle(i, shadowSize + i, Width - i * 2, Height - shadowSize - i * 2);
-                using (var path = CreateRoundedPath(shadowRect, BorderRadius))
-                using (var brush = new SolidBrush(Color.FromArgb(6, 0, 0, 0)))
-                    g.FillPath(brush, path);
-            }
+            using (var shadowPath = CreateRoundedPath(shadowRect, BorderRadius))
+            using (var shadowBrush = new SolidBrush(AppColors.Shadow))
+                g.FillPath(shadowBrush, shadowPath);
 
             // Draw card background
             using (var path = CreateRoundedPath(cardRect, BorderRadius))
             {
-                Region = new Region(path);
-                using (var brush = new SolidBrush(BackColor))
+                using (var brush = new SolidBrush(AppColors.WorkbenchSurface))
                     g.FillPath(brush, path);
+                using var borderPen = new Pen(AppColors.Border, 1F);
+                g.DrawPath(borderPen, path);
             }
 
-            // Draw bottom accent line
-            int accentHeight = 3;
-            var accentRect = new Rectangle(cardRect.X + BorderRadius, cardRect.Bottom - accentHeight, cardRect.Width - BorderRadius * 2, accentHeight);
-            using (var brush = new SolidBrush(_accentColor))
-                g.FillRectangle(brush, accentRect);
-
-            int textLeft = cardRect.X + 20;
-            int textWidth = cardRect.Width - 40;
+            int textLeft = cardRect.X + 16;
+            int textWidth = Math.Max(1, cardRect.Width - 32);
 
             // Draw title text
             using (var brush = new SolidBrush(AppColors.TextSecondary))
             {
-                var titleRect = new Rectangle(textLeft, cardRect.Y + 18, textWidth, 20);
+                var titleRect = new Rectangle(textLeft, cardRect.Y + 14, textWidth, 20);
                 var titleFormat = new StringFormat
                 {
                     Alignment = StringAlignment.Near,
@@ -84,14 +88,35 @@ namespace QuanLyThuVien.Controls
             // Draw value text
             using (var brush = new SolidBrush(AppColors.TextPrimary))
             {
-                g.DrawString(_value, _valueFont, brush, new PointF(textLeft, cardRect.Y + 42));
+                var valueRect = new Rectangle(textLeft, cardRect.Y + 36, textWidth, 42);
+                var valueFormat = new StringFormat
+                {
+                    Alignment = StringAlignment.Near,
+                    LineAlignment = StringAlignment.Center,
+                    Trimming = StringTrimming.EllipsisCharacter,
+                    FormatFlags = StringFormatFlags.NoWrap
+                };
+                g.DrawString(_value, _valueFont, brush, valueRect, valueFormat);
             }
 
             // Draw unit text
             using (var brush = new SolidBrush(AppColors.TextMuted))
             {
-                g.DrawString(_unit, _unitFont, brush, new PointF(textLeft, cardRect.Y + 80));
+                var unitRect = new Rectangle(textLeft, cardRect.Bottom - 25, textWidth, 18);
+                var unitFormat = new StringFormat
+                {
+                    Alignment = StringAlignment.Near,
+                    LineAlignment = StringAlignment.Center,
+                    Trimming = StringTrimming.EllipsisCharacter,
+                    FormatFlags = StringFormatFlags.NoWrap
+                };
+                g.DrawString(_unit, _unitFont, brush, unitRect, unitFormat);
             }
+        }
+
+        private void UpdateAccessibility()
+        {
+            AccessibleName = string.Join(" ", new[] { _title, _value, _unit }.Where(part => !string.IsNullOrWhiteSpace(part)));
         }
 
         private GraphicsPath CreateRoundedPath(Rectangle rect, int radius)

@@ -1,0 +1,63 @@
+/* Hallmark · genre: modern-minimal · tone: soft/welcoming · anchor hue: teal · macrostructure: Operational Workbench · pre-emit critique: P5 H5 E4 S5 R5 V5 · contrast: pass (40–41) · nav: existing WinForms chrome · slop: pass (42–45) · honest: pass (46) · chrome: pass (47) · tokens: pass (48) · responsive: pass (49, 50–57) · icons: pass (30) */
+:root {
+  --color-paper: oklch(97.28% 0.0061 137.8);
+  --color-paper-2: oklch(95.22% 0.0125 164.8);
+  --color-surface: oklch(99.42% 0.0069 88.6);
+  --color-ink: oklch(28.79% 0.0317 185.7);
+  --color-ink-2: oklch(52.69% 0.0257 182.5);
+  --color-rule: oklch(91.13% 0.0145 180.7);
+  --color-accent: oklch(51.09% 0.0861 186.4);
+  --color-accent-ink: oklch(99.42% 0.0069 88.6);
+  --color-focus: oklch(70.38% 0.1230 182.5);
+  --color-warning: oklch(66.58% 0.1574 58.3);
+  --color-danger: oklch(57.71% 0.2152 27.3);
+
+  --font-display: "Segoe UI Variable Display", "Segoe UI", sans-serif;
+  --font-body: "Segoe UI", sans-serif;
+
+  --space-2xs: 0.25rem;
+  --space-xs: 0.5rem;
+  --space-sm: 0.75rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+  --space-2xl: 3rem;
+
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-md: 1rem;
+  --text-lg: 1.25rem;
+  --text-display: 1.75rem;
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-micro: 120ms;
+  --dur-short: 220ms;
+  --dur-long: 420ms;
+
+  --rule-fine: 1px;
+  --radius-card: 14px;
+  --radius-input: 10px;
+  --radius-pill: 999px;
+}
+
+@theme {
+  --color-paper: oklch(97.28% 0.0061 137.8);
+  --color-paper-2: oklch(95.22% 0.0125 164.8);
+  --color-surface: oklch(99.42% 0.0069 88.6);
+  --color-ink: oklch(28.79% 0.0317 185.7);
+  --color-ink-2: oklch(52.69% 0.0257 182.5);
+  --color-rule: oklch(91.13% 0.0145 180.7);
+  --color-accent: oklch(51.09% 0.0861 186.4);
+  --color-focus: oklch(70.38% 0.1230 182.5);
+  --font-display: "Segoe UI Variable Display", "Segoe UI", sans-serif;
+  --font-body: "Segoe UI", sans-serif;
+  --spacing-xs: 0.5rem;
+  --spacing-sm: 0.75rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --radius-card: 14px;
+  --radius-input: 10px;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}

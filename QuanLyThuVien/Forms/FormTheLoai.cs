@@ -8,50 +8,29 @@ namespace QuanLyThuVien.Forms
 {
     public class FormTheLoai : UserControl
     {
-        private DataGridView dgv;
+        private DataGridView dgv = null!;
 
         public FormTheLoai()
         {
             BackColor = AppColors.ContentBg;
             Padding = new Padding(10);
             Load += (s, e) => LoadData();
-            Resize += (s, e) => { if (dgv != null) { dgv.Width = Width - 30; dgv.Height = Height - 120; } };
         }
 
         private void LoadData()
         {
-            Controls.Clear();
+            ResponsiveUi.DisposeChildren(this);
 
-            var header = new Label
-            {
-                Text = "Quản lý Thể loại",
-                Font = new Font("Segoe UI", 18F, FontStyle.Bold),
-                ForeColor = AppColors.TextPrimary,
-                AutoSize = true,
-                Location = new Point(10, 10)
-            };
-            Controls.Add(header);
-
-            var btnThem = new ModernButton
-            {
-                Text = "+ Thêm mới",
-                Location = new Point(10, 55),
-                Size = new Size(130, 38),
-                BaseColor = AppColors.Success,
-                HoverColor = Color.FromArgb(39, 174, 96),
-                BorderRadius = 8
-            };
-            btnThem.Click += (s, e) => ShowInputDialog(null);
-            Controls.Add(btnThem);
+            var btnThem = PageHeader.CreatePrimaryAction("+ Thêm thể loại", (_, _) => ShowInputDialog(null), 150);
 
             dgv = new ModernDataGridView
             {
                 Location = new Point(10, 105),
                 Size = new Size(Width - 30, Height - 120),
                 Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom,
-                BackgroundColor = Color.White,
+                BackgroundColor = AppColors.CardBg,
                 BorderStyle = BorderStyle.None,
-                GridColor = Color.FromArgb(230, 230, 230),
+                GridColor = AppColors.Border,
                 RowHeadersVisible = false,
                 AllowUserToAddRows = false,
                 AllowUserToDeleteRows = false,
@@ -74,7 +53,7 @@ namespace QuanLyThuVien.Forms
             dgv.Columns.Add("btnSửa", "Sửa");
             dgv.Columns.Add("btnXóa", "Xóa");
             dgv.CellClick += Dgv_CellClick;
-            Controls.Add(dgv);
+            ResponsiveUi.AddListPage(this, dgv, "Quản lý Thể loại", btnThem);
 
             try
             {
@@ -84,7 +63,8 @@ namespace QuanLyThuVien.Forms
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Lỗi thao tác: " + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                System.Diagnostics.Debug.WriteLine($"Tải thể loại thất bại: {ex}");
+                MessageBox.Show("Không thể tải dữ liệu thể loại.", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -105,7 +85,7 @@ namespace QuanLyThuVien.Forms
                         DataAccess.DeleteTheLoai(maTL);
                         LoadData();
                     }
-                    catch (Exception ex)
+                    catch (Exception)
                     {
                         MessageBox.Show("Không thể xóa thể loại này!", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
@@ -118,30 +98,33 @@ namespace QuanLyThuVien.Forms
             var frm = new Form
             {
                 Text = maTL.HasValue ? "Sửa thể loại" : "Thêm thể loại",
-                Size = new Size(380, 200),
+                ClientSize = new Size(380, 200),
+                MinimumSize = new Size(340, 180),
                 StartPosition = FormStartPosition.CenterParent,
-                FormBorderStyle = FormBorderStyle.FixedDialog,
-                MaximizeBox = false,
+                FormBorderStyle = FormBorderStyle.Sizable,
+                MaximizeBox = true,
                 MinimizeBox = false
             };
 
             var lbl = new Label { Text = "Tên thể loại:", Location = new Point(20, 25), AutoSize = true };
-            var txt = new ModernTextBox { Text = currentName, Location = new Point(20, 55), Size = new Size(320, 30) };
+            var txt = new ModernTextBox { Text = currentName, Location = new Point(20, 55), Size = new Size(320, 30), Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right };
             var btnOk = new ModernButton
             {
                 Text = "Lưu",
                 Location = new Point(20, 100),
                 Size = new Size(100, 38),
+                Anchor = AnchorStyles.Bottom | AnchorStyles.Left,
                 BaseColor = AppColors.Primary,
-                BorderRadius = 8
+                BorderRadius = 12
             };
             var btnCancel = new ModernButton
             {
                 Text = "Hủy",
                 Location = new Point(140, 100),
                 Size = new Size(100, 38),
+                Anchor = AnchorStyles.Bottom | AnchorStyles.Left,
                 BaseColor = AppColors.TextSecondary,
-                BorderRadius = 8
+                BorderRadius = 12
             };
 
             btnOk.Click += (s, e) =>
@@ -162,12 +145,17 @@ namespace QuanLyThuVien.Forms
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show("Lỗi thao tác: " + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    System.Diagnostics.Debug.WriteLine($"Lưu thể loại thất bại: {ex}");
+                    MessageBox.Show("Không thể lưu dữ liệu thể loại.", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             };
             btnCancel.Click += (s, e) => frm.Close();
 
             frm.Controls.AddRange(new Control[] { lbl, txt, btnOk, btnCancel });
+            frm.AcceptButton = btnOk;
+            frm.CancelButton = btnCancel;
+            frm.ActiveControl = txt;
+            txt.AccessibleName = "Tên thể loại";
             frm.ShowDialog();
         }
     }

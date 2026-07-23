@@ -19,12 +19,12 @@ namespace QuanLyThuVien.Forms
         {
             _originalImage = image;
             Text = "Cắt ảnh bìa";
-            Size = new Size(600, 550);
+            ClientSize = new Size(600, 550);
             StartPosition = FormStartPosition.CenterParent;
             FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox = false;
             MinimizeBox = false;
-            BackColor = Color.White;
+            BackColor = AppColors.ContentBg;
 
             int maxW = 560, maxH = 380;
             float ratioW = (float)maxW / image.Width;
@@ -40,7 +40,7 @@ namespace QuanLyThuVien.Forms
             {
                 Size = new Size(maxW, maxH),
                 Location = new Point(10, 10),
-                BackColor = Color.FromArgb(240, 240, 240)
+                BackColor = AppColors.HoverSurface
             };
             _picPreview.Paint += PicPreview_Paint;
             _picPreview.MouseDown += PicPreview_MouseDown;
@@ -86,13 +86,17 @@ namespace QuanLyThuVien.Forms
                 Size = new Size(100, 40),
                 Location = new Point(340, 480),
                 FlatStyle = FlatStyle.Flat,
-                BackColor = Color.FromArgb(200, 200, 200),
+                BackColor = AppColors.Border,
                 ForeColor = AppColors.TextPrimary,
                 Font = new Font("Segoe UI", 10F),
                 Cursor = Cursors.Hand
             };
             btnCancel.Click += (s, e) => { DialogResult = DialogResult.Cancel; Close(); };
             Controls.Add(btnCancel);
+            btnAccept.AccessibleName = "Chấp nhận cắt ảnh";
+            btnCancel.AccessibleName = "Hủy cắt ảnh";
+            AcceptButton = btnAccept;
+            CancelButton = btnCancel;
 
             var lblHint = new Label
             {
@@ -109,7 +113,7 @@ namespace QuanLyThuVien.Forms
         {
             if (_picPreview == null) return;
             var g = e.Graphics;
-            g.Clear(Color.FromArgb(240, 240, 240));
+            g.Clear(AppColors.HoverSurface);
 
             g.DrawImage(_originalImage, _offsetX, _offsetY, _picPreview.Width - _offsetX * 2, _picPreview.Height - _offsetY * 2);
 
@@ -129,7 +133,7 @@ namespace QuanLyThuVien.Forms
             g.FillRectangle(handleBrush, _cropRect.X - hs / 2, _cropRect.Bottom - hs / 2, hs, hs);
             g.FillRectangle(handleBrush, _cropRect.Right - hs / 2, _cropRect.Bottom - hs / 2, hs, hs);
 
-            using var gridPen = new Pen(Color.FromArgb(80, 255, 255, 255), 1);
+            using var gridPen = new Pen(Color.FromArgb(100, 255, 255, 255), 1);
             int thirdW = _cropRect.Width / 3;
             int thirdH = _cropRect.Height / 3;
             for (int i = 1; i < 3; i++)

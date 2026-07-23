@@ -3,17 +3,21 @@ using QuanLyThuVien.Controls;
 using QuanLyThuVien.Data;
 using QuanLyThuVien.Helpers;
 using QuanLyThuVien.Models;
+using QuanLyThuVien.Pdf;
 
 namespace QuanLyThuVien.Forms
 {
     public class FormSach : UserControl
     {
-        private DataGridView dgv;
-        private Panel pnlCatalog;
-        private Panel pnlToggle;
-        private Button btnCatalog;
-        private Button btnTable;
+        private DataGridView dgv = null!;
+        private Panel pnlCatalog = null!;
+        private ModernButton btnCatalog = null!;
+        private ModernButton btnTable = null!;
         private bool isCatalogView = true;
+        private int? _pendingBookDetail;
+        private string _bookKeyword = string.Empty;
+        private int? _bookGenre;
+        private bool _bookOnlyAvailable;
 
         private readonly BookImageStorage _bookImageStorage = new();
 
@@ -24,86 +28,64 @@ namespace QuanLyThuVien.Forms
             Load += (s, e) => LoadData();
             Resize += (s, e) =>
             {
-                if (dgv != null) { dgv.Width = Width - 30; dgv.Height = Height - 80; }
-                if (pnlCatalog != null) { pnlCatalog.Width = Width - 30; pnlCatalog.Height = Height - 80; LayoutCatalog(); }
+                if (pnlCatalog != null) LayoutCatalog();
             };
         }
 
         private void LoadData()
         {
-            Controls.Clear();
+            ResponsiveUi.DisposeChildren(this);
 
-            // Header
-            Controls.Add(new Label
-            {
-                Text = "Quản lý Sách",
-                Font = new Font("Segoe UI", 18F, FontStyle.Bold),
-                ForeColor = AppColors.TextPrimary,
-                AutoSize = true,
-                Location = new Point(10, 18)
-            });
+            var btnThem = PageHeader.CreatePrimaryAction("+ Thêm sách", (_, _) => ShowInputDialog(), 140);
 
-            var btnThem = new ModernButton
-            {
-                Text = "+ Thêm mới",
-                Location = new Point(210, 14),
-                Size = new Size(130, 38),
-                BaseColor = AppColors.Success,
-                HoverColor = Color.FromArgb(39, 174, 96),
-                BorderRadius = 8
-            };
-            btnThem.Click += (s, e) => ShowInputDialog();
-            Controls.Add(btnThem);
-
-            // Toggle buttons
-            pnlToggle = new Panel
-            {
-                Location = new Point(Width - 180, 14),
-                Size = new Size(150, 36),
-                Anchor = AnchorStyles.Top | AnchorStyles.Right,
-                BackColor = Color.FromArgb(230, 230, 230)
-            };
-
-            btnTable = new Button
+            btnTable = new ModernButton
             {
                 Text = "Bảng",
-                Size = new Size(75, 36),
-                Location = new Point(0, 0),
-                FlatStyle = FlatStyle.Flat,
-                FlatAppearance = { BorderSize = 0 },
-                BackColor = Color.Transparent,
-                ForeColor = AppColors.TextSecondary,
-                Font = new Font("Segoe UI", 10F, FontStyle.Regular),
-                Cursor = Cursors.Hand
+                Size = new Size(88, 40),
+                BaseColor = AppColors.CardBg,
+                HoverColor = AppColors.HoverSurface,
+                PressedColor = AppColors.SelectedSurface,
+                TextColor = AppColors.TextSecondary,
+                BorderRadius = 12,
+                Font = new Font("Segoe UI", 10F),
+                AccessibleName = "Xem sách dạng bảng"
             };
             btnTable.Click += (s, e) => SwitchView(false);
 
-            btnCatalog = new Button
+            btnCatalog = new ModernButton
             {
                 Text = "Thư viện",
-                Size = new Size(75, 36),
-                Location = new Point(75, 0),
-                FlatStyle = FlatStyle.Flat,
-                FlatAppearance = { BorderSize = 0 },
-                BackColor = Color.White,
-                ForeColor = AppColors.TextPrimary,
+                Size = new Size(104, 40),
+                BaseColor = AppColors.PrimaryLight,
+                HoverColor = AppColors.SelectedSurface,
+                PressedColor = AppColors.Focus,
+                TextColor = AppColors.PrimaryDark,
+                BorderRadius = 12,
                 Font = new Font("Segoe UI", 10F, FontStyle.Bold),
-                Cursor = Cursors.Hand
+                AccessibleName = "Xem sách dạng thư viện"
             };
             btnCatalog.Click += (s, e) => SwitchView(true);
 
-            pnlToggle.Controls.AddRange(new Control[] { btnTable, btnCatalog });
-            Controls.Add(pnlToggle);
+            var content = new Panel
+            {
+                Dock = DockStyle.Fill,
+                BackColor = Color.Transparent,
+                Padding = Padding.Empty
+            };
+            var viewHost = new Panel
+            {
+                Dock = DockStyle.Fill,
+                Margin = Padding.Empty,
+                BackColor = Color.Transparent
+            };
 
             // DataGridView (hidden by default)
             dgv = new ModernDataGridView
             {
-                Location = new Point(10, 65),
-                Size = new Size(Width - 30, Height - 80),
-                Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom,
-                BackgroundColor = Color.White,
+                Dock = DockStyle.Fill,
+                BackgroundColor = AppColors.CardBg,
                 BorderStyle = BorderStyle.None,
-                GridColor = Color.FromArgb(230, 230, 230),
+                GridColor = AppColors.Border,
                 RowHeadersVisible = false,
                 AllowUserToAddRows = false,
                 ReadOnly = true,
@@ -132,21 +114,53 @@ namespace QuanLyThuVien.Forms
             dgv.Columns.Add("btnSửa", "Sửa");
             dgv.Columns.Add("btnXóa", "Xóa");
             dgv.CellClick += Dgv_CellClick;
-            Controls.Add(dgv);
+            viewHost.Controls.Add(dgv);
 
             // Catalog panel
             pnlCatalog = new Panel
             {
-                Location = new Point(10, 65),
-                Size = new Size(Width - 30, Height - 80),
-                Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom,
+                Dock = DockStyle.Fill,
                 AutoScroll = true,
                 BackColor = Color.Transparent
             };
-            Controls.Add(pnlCatalog);
+            pnlCatalog.Resize += (_, _) => LayoutCatalog();
+            viewHost.Controls.Add(pnlCatalog);
+
+            var filterBar = new FilterBar("Tìm tên sách, ISBN, tác giả...");
+            filterBar.SearchBox.Text = _bookKeyword;
+            var genreFilter = new ModernComboBox { Size = new Size(160, 36), DropDownStyle = ComboBoxStyle.DropDownList };
+            genreFilter.Items.Add(new ComboItem("Tất cả thể loại", 0));
+            foreach (DataRow row in DataAccess.GetAllTheLoai().Rows)
+                genreFilter.Items.Add(new ComboItem(row["TenTheLoai"].ToString() ?? string.Empty, Convert.ToInt32(row["MaTL"])));
+            genreFilter.SelectedIndex = Math.Max(0, genreFilter.Items.Cast<ComboItem>().ToList().FindIndex(item => item.Value == (_bookGenre ?? 0)));
+            filterBar.AddFilter(genreFilter, "Lọc thể loại sách");
+            var availableFilter = new ModernComboBox { Size = new Size(170, 36), DropDownStyle = ComboBoxStyle.DropDownList };
+            availableFilter.Items.AddRange(new object[] { "Tất cả số lượng", "Còn trong kho" });
+            availableFilter.SelectedIndex = _bookOnlyAvailable ? 1 : 0;
+            filterBar.AddFilter(availableFilter, "Lọc sách còn trong kho");
+            filterBar.FilterChanged += (_, _) =>
+            {
+                _bookKeyword = filterBar.SearchBox.Text;
+                _bookGenre = (genreFilter.SelectedItem as ComboItem)?.Value is int genre && genre > 0 ? genre : null;
+                _bookOnlyAvailable = availableFilter.SelectedIndex == 1;
+                LoadCatalogData();
+                LoadTableData();
+            };
+            content.Controls.Add(viewHost);
+
+            var btnExport = PageHeader.CreatePrimaryAction("Xuất PDF", (_, _) => PdfExportService.ExportGrid(dgv, "Danh sách sách", "sach", FindForm() is IWin32Window owner ? owner : this), 105);
+            var header = new PageHeader("Quản lý Sách", btnThem, btnTable, btnCatalog, btnExport);
+            header.SetFilterBar(filterBar);
+            Controls.Add(content);
+            Controls.Add(header);
 
             LoadCatalogData();
             LoadTableData();
+            if (_pendingBookDetail is int pendingBookId)
+            {
+                _pendingBookDetail = null;
+                ShowBookDetail(pendingBookId);
+            }
         }
 
         private void SwitchView(bool catalog)
@@ -157,30 +171,30 @@ namespace QuanLyThuVien.Forms
 
             if (catalog)
             {
-                btnCatalog.BackColor = Color.White;
-                btnCatalog.ForeColor = AppColors.TextPrimary;
+                btnCatalog.BaseColor = AppColors.PrimaryLight;
+                btnCatalog.TextColor = AppColors.PrimaryDark;
                 btnCatalog.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
-                btnTable.BackColor = Color.Transparent;
-                btnTable.ForeColor = AppColors.TextSecondary;
+                btnTable.BaseColor = AppColors.CardBg;
+                btnTable.TextColor = AppColors.TextSecondary;
                 btnTable.Font = new Font("Segoe UI", 10F, FontStyle.Regular);
             }
             else
             {
-                btnTable.BackColor = Color.White;
-                btnTable.ForeColor = AppColors.TextPrimary;
+                btnTable.BaseColor = AppColors.PrimaryLight;
+                btnTable.TextColor = AppColors.PrimaryDark;
                 btnTable.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
-                btnCatalog.BackColor = Color.Transparent;
-                btnCatalog.ForeColor = AppColors.TextSecondary;
+                btnCatalog.BaseColor = AppColors.CardBg;
+                btnCatalog.TextColor = AppColors.TextSecondary;
                 btnCatalog.Font = new Font("Segoe UI", 10F, FontStyle.Regular);
             }
         }
 
         private void LoadCatalogData()
         {
-            pnlCatalog.Controls.Clear();
+            ResponsiveUi.DisposeChildren(pnlCatalog);
             try
             {
-                var dt = DataAccess.GetAllSach();
+                var dt = DataAccess.GetAllSach(_bookKeyword, _bookGenre, _bookOnlyAvailable);
                 int index = 0;
                 foreach (DataRow row in dt.Rows)
                 {
@@ -215,7 +229,7 @@ namespace QuanLyThuVien.Forms
                 }
                 LayoutCatalog();
             }
-            catch (Exception ex) { MessageBox.Show("Lỗi: " + ex.Message); }
+            catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Tải sách thất bại: {ex}"); MessageBox.Show("Không thể tải dữ liệu sách.", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error); }
         }
 
         private void LayoutCatalog()
@@ -275,13 +289,13 @@ namespace QuanLyThuVien.Forms
             dgv.Rows.Clear();
             try
             {
-                var dt = DataAccess.GetAllSach();
+                var dt = DataAccess.GetAllSach(_bookKeyword, _bookGenre, _bookOnlyAvailable);
                 foreach (DataRow row in dt.Rows)
                     dgv.Rows.Add(row["MaSach"], row["TenSach"], row["MaISBN"], row["TenTheLoai"],
                         row["TenTacGia"], row["TenNXB"], row["NamXB"], row["SoLuong"],
                         row["GiaTien"], "Sửa", "Xóa");
             }
-            catch { }
+            catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Không tải được ảnh bìa: {ex}"); }
         }
 
         private void BookCard_Click(object? sender, EventArgs e)
@@ -294,6 +308,16 @@ namespace QuanLyThuVien.Forms
             {
                 ShowBookDetail(maSach);
             }
+        }
+
+        public void OpenBookDetail(int maSach)
+        {
+            if (dgv == null)
+            {
+                _pendingBookDetail = maSach;
+                return;
+            }
+            ShowBookDetail(maSach);
         }
 
         private void ShowBookDetail(int maSach)
@@ -328,14 +352,16 @@ namespace QuanLyThuVien.Forms
             var frm = new Form
             {
                 Text = sach.TenSach,
-                Size = new Size(520, 700),
+                ClientSize = new Size(520, 700),
+                MinimumSize = new Size(440, 560),
                 StartPosition = FormStartPosition.CenterParent,
-                FormBorderStyle = FormBorderStyle.FixedDialog,
-                MaximizeBox = false,
+                FormBorderStyle = FormBorderStyle.Sizable,
+                MaximizeBox = true,
                 MinimizeBox = false,
                 BackColor = AppColors.ContentBg,
                 Font = new Font("Segoe UI", 10F),
-                AutoScroll = true
+                AutoScroll = true,
+                AutoScrollMinSize = new Size(500, 650)
             };
 
             // Cover image
@@ -344,7 +370,7 @@ namespace QuanLyThuVien.Forms
                 Size = new Size(480, 280),
                 Location = new Point(20, 15),
                 SizeMode = PictureBoxSizeMode.Zoom,
-                BackColor = Color.FromArgb(230, 230, 230),
+                BackColor = AppColors.HoverSurface,
                 BorderStyle = BorderStyle.None
             };
 
@@ -356,7 +382,7 @@ namespace QuanLyThuVien.Forms
                 Location = new Point(20, 305),
                 Size = new Size(140, 32),
                 BaseColor = AppColors.Info,
-                HoverColor = Color.FromArgb(124, 58, 237),
+                HoverColor = AppColors.InfoDark,
                 BorderRadius = 6
             };
 
@@ -368,7 +394,7 @@ namespace QuanLyThuVien.Forms
                 Location = new Point(120, 305),
                 Size = new Size(100, 32),
                 BaseColor = AppColors.Success,
-                HoverColor = Color.FromArgb(39, 174, 96),
+                HoverColor = AppColors.SuccessDark,
                 BorderRadius = 6,
                 Visible = false
             };
@@ -394,7 +420,8 @@ namespace QuanLyThuVien.Forms
                 catch (Exception ex)
                 {
                     _bookImageStorage.DeleteLocalAsset(createdImageKey);
-                    MessageBox.Show("Lỗi khi lưu ảnh: " + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    System.Diagnostics.Debug.WriteLine($"Lưu ảnh sách thất bại: {ex}");
+                    MessageBox.Show("Không thể lưu ảnh bìa.", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             };
 
@@ -421,7 +448,8 @@ namespace QuanLyThuVien.Forms
                         }
                         catch (Exception ex)
                         {
-                            MessageBox.Show("Lỗi khi mở form crop: " + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                            System.Diagnostics.Debug.WriteLine($"Mở crop ảnh thất bại: {ex}");
+                            MessageBox.Show("Không thể mở công cụ cắt ảnh.", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
                         }
                     }
                 }
@@ -453,7 +481,7 @@ namespace QuanLyThuVien.Forms
                 Size = new Size(100, 38),
                 BaseColor = AppColors.Primary,
                 HoverColor = AppColors.PrimaryDark,
-                BorderRadius = 8
+                BorderRadius = 12
             };
             btnEdit.Click += (s, e) => { frm.Close(); ShowInputDialog(sach); };
 
@@ -463,8 +491,8 @@ namespace QuanLyThuVien.Forms
                 Location = new Point(130, y),
                 Size = new Size(100, 38),
                 BaseColor = AppColors.Danger,
-                HoverColor = Color.FromArgb(220, 53, 69),
-                BorderRadius = 8
+                HoverColor = AppColors.DangerDark,
+                BorderRadius = 12
             };
             btnDelete.Click += (s, e) =>
             {
@@ -478,7 +506,8 @@ namespace QuanLyThuVien.Forms
                     }
                     catch (Exception ex)
                     {
-                        MessageBox.Show("Không thể xóa sách này!\n" + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        System.Diagnostics.Debug.WriteLine($"Xóa sách thất bại: {ex}");
+                        MessageBox.Show("Không thể xóa sách này.", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }
             };
@@ -489,12 +518,16 @@ namespace QuanLyThuVien.Forms
                 Location = new Point(380, y),
                 Size = new Size(100, 38),
                 BaseColor = AppColors.TextSecondary,
-                HoverColor = Color.FromArgb(100, 100, 100),
-                BorderRadius = 8
+                HoverColor = AppColors.PrimaryDark,
+                BorderRadius = 12
             };
             btnClose.Click += (s, e) => frm.Close();
 
             frm.Controls.AddRange(new Control[] { pbCover, btnUpload, btnLuuAnh, lblTenSach, lblISBN, lblNamXB, lblSoLuong, lblGia, lblMoTa, btnEdit, btnDelete, btnClose });
+            frm.CancelButton = btnClose;
+            btnEdit.AccessibleName = "Sửa thông tin sách";
+            btnDelete.AccessibleName = "Xóa sách";
+            btnClose.AccessibleName = "Đóng chi tiết sách";
             frm.ShowDialog();
         }
 
@@ -536,7 +569,8 @@ namespace QuanLyThuVien.Forms
                     }
                     catch (Exception ex)
                     {
-                        MessageBox.Show("Không thể xóa sách này!\n" + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        System.Diagnostics.Debug.WriteLine($"Xóa sách thất bại: {ex}");
+                        MessageBox.Show("Không thể xóa sách này.", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }
             }
@@ -547,14 +581,16 @@ namespace QuanLyThuVien.Forms
             var frm = new Form
             {
                 Text = existing != null ? "Sửa sách" : "Thêm sách",
-                Size = new Size(450, 650),
+                ClientSize = new Size(450, 650),
+                MinimumSize = new Size(420, 520),
                 StartPosition = FormStartPosition.CenterParent,
-                FormBorderStyle = FormBorderStyle.FixedDialog,
-                MaximizeBox = false,
+                FormBorderStyle = FormBorderStyle.Sizable,
+                MaximizeBox = true,
                 MinimizeBox = false,
-                BackColor = Color.White,
+                BackColor = AppColors.CardBg,
                 Font = new Font("Segoe UI", 10F),
-                AutoScroll = true
+                AutoScroll = true,
+                AutoScrollMinSize = new Size(430, 610)
             };
 
             var tlData = DataAccess.GetAllTheLoai();
@@ -604,7 +640,7 @@ namespace QuanLyThuVien.Forms
             y += 40;
 
             var lbl6 = new Label { Text = "Năm XB:", Location = new Point(20, y + 3), AutoSize = true };
-            var nudNam = new NumericUpDown { Location = new Point(140, y), Size = new Size(100, 30), Minimum = 1900, Maximum = 2030, Value = existing?.NamXB ?? 2024 };
+            var nudNam = new NumericUpDown { Location = new Point(140, y), Size = new Size(100, 30), Minimum = 1900, Maximum = DateTime.Now.Year + 1, Value = existing?.NamXB ?? DateTime.Now.Year };
             y += 40;
 
             var lbl7 = new Label { Text = "Số lượng còn sẵn:", Location = new Point(20, y + 3), AutoSize = true };
@@ -623,7 +659,10 @@ namespace QuanLyThuVien.Forms
             var lbl10 = new Label { Text = "Ảnh bìa:", Location = new Point(20, y + 3), AutoSize = true };
             var txtHinhAnh = new ModernTextBox { Text = existing?.HinhAnh ?? "", Location = new Point(140, y), Size = new Size(170, 30), ReadOnly = true };
             var btnChonAnh = new ModernButton { Text = "...", Location = new Point(320, y), Size = new Size(40, 30), BaseColor = AppColors.TextSecondary, BorderRadius = 4 };
-            var pbPreview = new PictureBox { Size = new Size(100, 80), Location = new Point(140, y + 35), SizeMode = PictureBoxSizeMode.Zoom, BackColor = Color.FromArgb(240, 240, 240) };
+            btnChonAnh.AccessibleName = "Chọn ảnh bìa";
+            var imageToolTip = new ToolTip();
+            imageToolTip.SetToolTip(btnChonAnh, "Chọn ảnh bìa");
+            var pbPreview = new PictureBox { Size = new Size(100, 80), Location = new Point(140, y + 35), SizeMode = PictureBoxSizeMode.Zoom, BackColor = AppColors.HoverSurface };
             string? selectedImagePath = null;
 
             SetPictureImage(pbPreview, _bookImageStorage.LoadImage(existing?.HinhAnh));
@@ -642,8 +681,8 @@ namespace QuanLyThuVien.Forms
                 }
             };
 
-            var btnOk = new ModernButton { Text = "Lưu", Location = new Point(140, y + 125), Size = new Size(120, 40), BaseColor = AppColors.Primary, BorderRadius = 8 };
-            var btnCancel = new ModernButton { Text = "Hủy", Location = new Point(280, y + 125), Size = new Size(120, 40), BaseColor = AppColors.TextSecondary, BorderRadius = 8 };
+            var btnOk = new ModernButton { Text = "Lưu", Location = new Point(140, y + 125), Size = new Size(120, 40), BaseColor = AppColors.Primary, BorderRadius = 12 };
+            var btnCancel = new ModernButton { Text = "Hủy", Location = new Point(280, y + 125), Size = new Size(120, 40), BaseColor = AppColors.TextSecondary, BorderRadius = 12 };
 
             btnOk.Click += (s, e) =>
             {
@@ -682,7 +721,8 @@ namespace QuanLyThuVien.Forms
                 catch (Exception ex)
                 {
                     _bookImageStorage.DeleteLocalAsset(createdImageKey);
-                    MessageBox.Show("Không thể lưu ảnh bìa: " + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    System.Diagnostics.Debug.WriteLine($"Lưu ảnh bìa thất bại: {ex}");
+                    MessageBox.Show("Không thể lưu ảnh bìa.", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
 
@@ -692,6 +732,12 @@ namespace QuanLyThuVien.Forms
             btnCancel.Click += (s, e) => frm.Close();
 
             frm.Controls.AddRange(new Control[] { lbl1, txt1, lbl2, txt2, lbl3, cboTL, lbl4, cboTG, lbl5, cboNXB, lbl6, nudNam, lbl7, nudSL, lbl8, nudGia, lbl9, txtMoTa, lbl10, txtHinhAnh, btnChonAnh, pbPreview, btnOk, btnCancel });
+            frm.AcceptButton = btnOk;
+            frm.CancelButton = btnCancel;
+            frm.ActiveControl = txt1;
+            txt1.AccessibleName = "Tên sách";
+            txt2.AccessibleName = "Mã ISBN";
+            txtMoTa.AccessibleName = "Mô tả sách";
             frm.ShowDialog();
         }
 

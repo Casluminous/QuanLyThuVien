@@ -7,12 +7,12 @@ namespace QuanLyThuVien.Controls
     {
         private readonly TextBox _textBox;
         private string _placeholder = "";
-        private Color _placeholderColor = Color.FromArgb(156, 163, 175);
+        private Color _placeholderColor = AppColors.TextMuted;
         private bool _isPlaceholderActive = true;
-        private int _borderRadius = 12; // Rounded box style
-        private Color _borderColor = Color.FromArgb(213, 209, 201); // #D5D1C9 (Xám cát ấm)
-        private Color _focusedBorderColor = AppColors.Primary;
-        private Color _hoverBorderColor = Color.FromArgb(179, 174, 168); // #B3AEA8
+        private int _borderRadius = 10;
+        private Color _borderColor = AppColors.Border;
+        private Color _focusedBorderColor = AppColors.Focus;
+        private Color _hoverBorderColor = AppColors.TextSecondary;
         private bool _isFocused = false;
         private bool _isHovered = false;
 
@@ -54,6 +54,7 @@ namespace QuanLyThuVien.Controls
             set { _focusedBorderColor = value; Invalidate(); }
         }
 
+        [System.Diagnostics.CodeAnalysis.AllowNull]
         public override string Text
         {
             get => _isPlaceholderActive ? "" : _textBox.Text;
@@ -97,12 +98,13 @@ namespace QuanLyThuVien.Controls
             set
             {
                 _textBox.ReadOnly = value;
-                _textBox.BackColor = value ? Color.FromArgb(248, 250, 252) : Color.White;
-                BackColor = value ? Color.FromArgb(248, 250, 252) : Color.White;
+                _textBox.BackColor = value ? AppColors.HoverSurface : Color.White;
+                BackColor = value ? AppColors.HoverSurface : Color.White;
                 Invalidate();
             }
         }
 
+        [System.Diagnostics.CodeAnalysis.AllowNull]
         public override Font Font
         {
             get => base.Font;
@@ -132,13 +134,15 @@ namespace QuanLyThuVien.Controls
                 BorderStyle = BorderStyle.None,
                 Font = new Font("Segoe UI", 10F),
                 ForeColor = _placeholderColor,
-                BackColor = Color.White,
+                BackColor = AppColors.CardBg,
                 Width = Width - 20
             };
 
-            BackColor = Color.White;
+            BackColor = AppColors.CardBg;
             Padding = new Padding(10, 8, 10, 8);
             Size = new Size(250, 36);
+            TabStop = true;
+            AccessibleRole = AccessibleRole.Text;
             DoubleBuffered = true;
 
             Controls.Add(_textBox);
@@ -171,6 +175,7 @@ namespace QuanLyThuVien.Controls
             {
                 OnTextChanged(e);
             };
+            _textBox.KeyDown += (s, e) => OnKeyDown(e);
 
             MouseEnter += (s, e) => { _isHovered = true; Invalidate(); };
             MouseLeave += (s, e) => { _isHovered = false; Invalidate(); };
@@ -178,6 +183,13 @@ namespace QuanLyThuVien.Controls
             _textBox.MouseLeave += (s, e) => { _isHovered = false; Invalidate(); };
 
             UpdateTextBoxPosition();
+        }
+
+        protected override void OnEnter(EventArgs e)
+        {
+            base.OnEnter(e);
+            if (!_textBox.Focused)
+                _textBox.Focus();
         }
 
         private void UpdateTextBoxPosition()
@@ -249,7 +261,8 @@ namespace QuanLyThuVien.Controls
             return path;
         }
 
-        public string GetRealText() => Text;
+        public string GetRealText() => Text ?? string.Empty;
         public void SetRealText(string value) => Text = value;
+        public void FocusInput() => _textBox.Focus();
     }
 }

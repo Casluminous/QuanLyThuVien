@@ -1,11 +1,13 @@
 ﻿using System.Drawing.Drawing2D;
 
+using QuanLyThuVien.Helpers;
+
 namespace QuanLyThuVien.Controls
 {
     public class RoundedPanel : Panel
     {
-        public int BorderRadius { get; set; } = 20;
-        public Color BorderColor { get; set; } = Color.Transparent;
+        public int BorderRadius { get; set; } = 14;
+        public Color BorderColor { get; set; } = AppColors.Border;
         public int BorderSize { get; set; } = 0;
         public bool HasShadow { get; set; } = false;
 
@@ -18,7 +20,17 @@ namespace QuanLyThuVien.Controls
                 ControlStyles.ResizeRedraw |
                 ControlStyles.SupportsTransparentBackColor,
                 true);
-            BackColor = Color.White;
+            BackColor = AppColors.CardBg;
+        }
+
+        protected override void OnResize(EventArgs e)
+        {
+            base.OnResize(e);
+            if (Width > 0 && Height > 0)
+            {
+                using var path = CreatePath();
+                Region = new Region(path);
+            }
         }
 
         protected override void OnPaint(PaintEventArgs e)
@@ -31,7 +43,7 @@ namespace QuanLyThuVien.Controls
             if (HasShadow)
             {
                 using (var shadowPath = CreatePath(4, 4))
-                using (var shadowBrush = new SolidBrush(Color.FromArgb(30, 0, 0, 0)))
+                using (var shadowBrush = new SolidBrush(AppColors.Shadow))
                     g.FillPath(shadowBrush, shadowPath);
             }
 
@@ -46,7 +58,6 @@ namespace QuanLyThuVien.Controls
                     g.DrawPath(pen, path);
             }
 
-            Region = new Region(CreatePath());
         }
 
         private GraphicsPath CreatePath(int offsetX = 0, int offsetY = 0)
